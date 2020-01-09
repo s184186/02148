@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<?import javafx.scene.text.Font?>
+<VBox alignment="CENTER" style="-fx-background-color: rgb(170,204,102);" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dk.dtu.advanced_snake.BeforeGameController">
+    <children>
+        <Button fx:id="playOnline" mnemonicParsing="false" onAction="#handleNewGame" prefHeight="166.0" prefWidth="500.0" style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);" text="New Game">
+            <font>
+                <Font name="Courier New" size="38.0" fx:id="x1" />
+            </font>
+        </Button>
+        <Button fx:id="playBots" font="$x1" mnemonicParsing="false" onAction="#handleLoadGame" prefHeight="166.0" prefWidth="500.0" style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);" text="Load Game" />
+        <Button fx:id="loadGame" font="$x1" mnemonicParsing="false" onAction="#handleLoadGame" prefHeight="166.0" prefWidth="500.0" style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);" text="Load Game" />
+        <Button fx:id="exitGame" font="$x1" mnemonicParsing="false" onAction="#handleExitGame" prefHeight="166.0" prefWidth="500.0" style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);" text="Exit Game" />
+    </children>
+</VBox>
