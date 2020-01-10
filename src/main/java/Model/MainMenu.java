@@ -1,4 +1,4 @@
-package View;
+package Model;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -21,7 +21,7 @@ public class MainMenu extends Application {
     }
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("MainMenu"));
+        scene = new Scene(loadFXML("/MainMenu"));
         stage.setTitle("Partners");
         stage.setScene(scene);
         stage.show();

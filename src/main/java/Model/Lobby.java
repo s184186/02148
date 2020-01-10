@@ -43,7 +43,7 @@ public class Lobby {
         }
     }
 
-    private static void playGame(Space game, boolean sender) throws InterruptedException {
+    private static void playGame(BoardField game, boolean sender) throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
         if (sender) {
             while (true) {
