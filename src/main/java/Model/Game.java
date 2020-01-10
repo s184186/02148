@@ -48,7 +48,7 @@ public class Game implements Runnable {
     public void shuffleCards(List<Object[]> users) throws InterruptedException {
         //Missing something which ensures that no more than 4 cards of the same kind are handed out.
         List<Cards> deck;
-        for(int i; i<4; i++){
+        for(int i=0; i<4; i++){
         Arrays.asList(Cards.values());}
         //Make list of crds
         Cards[] hand = new Cards[4];
@@ -68,7 +68,6 @@ public class Game implements Runnable {
 /*
         if(card.getFunction().matches("fw") && potentialMove[1])
 */
-        return true;
     }
 
     public void updateBoard() {
