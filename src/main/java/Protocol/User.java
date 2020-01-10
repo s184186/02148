@@ -8,7 +8,7 @@ import org.jspace.Space;
 import java.io.IOException;
 import java.util.Scanner;
 
-import static test.Templates.*;
+import static Protocol.Templates.*;
 
 public class User {
 

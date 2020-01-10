@@ -2,7 +2,7 @@ package Protocol;
 
 import org.jspace.*;
 
-import static test.Templates.*;
+import static Protocol.Templates.*;
 
 
 public class Server implements Runnable {
