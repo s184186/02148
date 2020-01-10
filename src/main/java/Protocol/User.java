@@ -6,6 +6,8 @@ import org.jspace.RemoteSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 import static Protocol.Templates.*;
@@ -42,8 +44,26 @@ public class User {
         }
 
         String info;
+        Space game = null;
 
-        RemoteSpace game = new RemoteSpace("tcp://localhost:31415/game?keep");
+        if(isHost){
+            InetAddress inetAddress = null;
+            try {
+                inetAddress = InetAddress.getLocalHost();
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+            String ip = inetAddress.getHostAddress();
+            int port = 11345;
+
+            String URI = "tcp://" + ip + ":" + port + "/game?keep";
+            game = new RemoteSpace(URI);
+        } else {
+            System.out.println("Please enter URI:");
+            String URI = in.next();
+            game = new RemoteSpace(URI);
+        }
+
         game.put("connectToGameReq", username);
 
         Object[] ack = game.get(connectToGameAck(username).getFields());
