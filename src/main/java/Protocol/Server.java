@@ -2,6 +2,9 @@ package Protocol;
 
 import org.jspace.*;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import static Protocol.Templates.*;
 
 
@@ -35,7 +38,23 @@ public class Server implements Runnable {
             e.printStackTrace();
         }
 
+        // Setting up URI
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        String ip = inetAddress.getHostAddress();
+        int port = 11345;
+
+        String URI = "tcp://" + ip + ":" + port + "?keep";
+        System.out.println("A game is hosted on URI: " + URI);
+
+        // Opening gate at given URI
+        gameRepository.addGate(URI);
         gameRepository.add("game", game);
+
         gameRepository.addGate("tcp://localhost:31415/?keep");
 
         //Look for players connecting
