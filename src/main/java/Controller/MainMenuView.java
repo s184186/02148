@@ -12,10 +12,10 @@ public class MainMenuView extends Application {
 
     private Stage mainMenuStage;
 
-
     public static void main(String[] args) {
         launch();
     }
+
     @Override
     public void start(Stage stage) throws IOException {
 
@@ -28,12 +28,13 @@ public class MainMenuView extends Application {
         mainMenuController.setMainMenuView(this);
 
         Scene scene = new Scene(root);
+        mainMenuStage.setResizable(false);
         mainMenuStage.setTitle("Partners");
         mainMenuStage.setScene(scene);
         mainMenuStage.show();
     }
 
-    public Stage getMainMenuStage(){
+    public Stage getMainMenuStage() {
         return mainMenuStage;
     }
 }

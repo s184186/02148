@@ -1,147 +1,157 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.geometry.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.paint.*?>
-
-<VBox alignment="TOP_LEFT" prefHeight="362.0" prefWidth="450.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="Controller.LobbyController">
-  <children>
-    <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="21.0" prefWidth="450.0" text="Lobby info:" />
-    <HBox prefHeight="100.0" prefWidth="200.0">
-      <children>
-        <Pane prefHeight="81.0" prefWidth="234.0">
-          <children>
-            <VBox id="VBox" alignment="CENTER_RIGHT" layoutX="5.0" layoutY="0.0" prefHeight="81.0" prefWidth="43.0" spacing="5.0">
-              <children>
-                <Label text="Host:" />
-                <Label text="ip:" />
-              </children>
-            </VBox>
-            <VBox id="VBox" alignment="CENTER_LEFT" layoutX="47.0" layoutY="0.0" prefHeight="81.0" prefWidth="161.0" spacing="5.0">
-              <children>
-                <Label fx:id="hostNameField" prefWidth="166.0" text="">
-                  <VBox.margin>
-                    <Insets left="5.0" fx:id="x2" />
-                  </VBox.margin>
-                </Label>
-                <Label fx:id="URIField" prefWidth="166.0" text="" VBox.margin="$x2" />
-              </children>
-            </VBox>
-          </children>
-        </Pane>
-        <Pane prefHeight="81.0" prefWidth="216.0">
-          <children>
-            <VBox id="VBox" alignment="CENTER_RIGHT" layoutX="0.0" layoutY="-2.0" prefHeight="83.0" prefWidth="57.0" spacing="5.0">
-              <children>
-                <Label text="Version:" />
-                <Label text="Teams:" />
-              </children>
-            </VBox>
-            <VBox id="VBox" alignment="CENTER_LEFT" layoutX="62.0" layoutY="-1.0" prefHeight="80.99990000000253" prefWidth="150.0" spacing="5.0">
-              <children>
-                <Label fx:id="versionField" prefWidth="150.0" text="" />
-                <Label fx:id="numberOfTeamsField" prefWidth="150.0" text="" />
-              </children>
-            </VBox>
-          </children>
-        </Pane>
-      </children>
-    </HBox>
-    <HBox alignment="CENTER" prefHeight="158.0" prefWidth="433.0">
-      <children>
-        <Pane prefHeight="158.0" prefWidth="150.0">
-          <children>
-            <HBox id="HBox" alignment="CENTER" layoutX="-5.0" layoutY="0.0" minHeight="19.9609375" prefHeight="32.9609375" prefWidth="161.0" spacing="5.0">
-              <children>
-                <Label text="Team 1:" />
-                <Button fx:id="joinTeam1Button" mnemonicParsing="false" onAction="#handleJoinTeam1" text="Join" />
-              </children>
-            </HBox>
-            <VBox id="VBox" alignment="CENTER" layoutX="0.0" layoutY="33.0" prefHeight="106.0" prefWidth="149.99997792968497" spacing="5.0">
-              <children>
-                <Label fx:id="team1Player1Field" text="" />
-                <Label fx:id="team1Player2Field" text="" />
-                <Label fx:id="team1Player3Field" text="" />
-              </children>
-            </VBox>
-          </children>
-        </Pane>
-        <Pane prefHeight="158.0" prefWidth="150.0">
-          <children>
-            <HBox id="HBox" alignment="CENTER" layoutX="-6.0" layoutY="0.0" prefHeight="32.960837500002526" prefWidth="161.0" spacing="5.0">
-              <children>
-                <Label text="Team 2:" />
-                <Button fx:id="joinTeam2Button" mnemonicParsing="false" onAction="#handleJoinTeam2" text="Join" />
-              </children>
-            </HBox>
-            <VBox id="VBox" alignment="CENTER" layoutX="8.0" layoutY="33.0" prefHeight="106.0" prefWidth="136.99990000000253" spacing="5.0">
-              <children>
-                <Label fx:id="team2Player1Field" text="" />
-                <Label fx:id="team2Player2Field" text="" />
-                <Label fx:id="team2Player3Field" text="" />
-              </children>
-            </VBox>
-          </children>
-        </Pane>
-        <Pane prefHeight="158.0" prefWidth="150.0">
-          <children>
-            <HBox id="HBox" alignment="CENTER" layoutX="0.0" layoutY="0.0" prefHeight="32.960845947265625" prefWidth="150.0" spacing="5.0">
-              <children>
-                <Label text="Team 3:" />
-                <Button fx:id="joinTeam3Button" mnemonicParsing="false" onAction="#handleJoinTeam3" text="Join" />
-              </children>
-            </HBox>
-            <VBox id="VBox" alignment="CENTER" layoutX="3.0" layoutY="33.0" minHeight="55.0" prefHeight="105.99996948242188" prefWidth="137.00009999999747" spacing="5.0">
-              <children>
-                <Label fx:id="team3Player1Field" text="" />
-                <Label fx:id="team3Player2Field" text="" />
-                <Label fx:id="team3Player3Field" text="" />
-              </children>
-            </VBox>
-          </children>
-        </Pane>
-      </children>
-    </HBox>
-    <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
-      <children>
-        <VBox alignment="CENTER" prefHeight="81.0" prefWidth="150.0">
-          <children>
-            <Label fx:id="player1Field" alignment="CENTER" text="">
-              <VBox.margin>
-                <Insets top="30.0" fx:id="x1" />
-              </VBox.margin>
-            </Label>
-            <Label fx:id="player4Field" text="" />
-          </children>
-        </VBox>
-        <VBox alignment="CENTER" prefHeight="200.0" prefWidth="150.0">
-          <children>
-            <Label text="Connected players:">
-              <VBox.margin>
-                <Insets bottom="10.0" />
-              </VBox.margin>
-            </Label>
-            <Label fx:id="player2Field" text="" />
-            <Label fx:id="player5Field" text="" />
-          </children>
-        </VBox>
-        <VBox alignment="CENTER" prefHeight="200.0" prefWidth="150.0">
-          <children>
-            <Label fx:id="player3Field" text="" VBox.margin="$x1" />
-            <Label fx:id="player6Field" text="" />
-          </children>
-        </VBox>
-      </children>
-    </HBox>
-    <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0" spacing="20.0">
-      <padding>
-        <Insets bottom="20.0" top="5.0" />
-      </padding>
-      <Button fx:id="playButton" mnemonicParsing="false" onAction="#handlePlay" prefWidth="62.5" text="Play" />
-      <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" text="Disconnect" />
-    </HBox>
-  </children>
+<VBox xmlns:fx="http://javafx.com/fxml/1" alignment="TOP_LEFT" prefHeight="362.0" prefWidth="450.0"
+      xmlns="http://javafx.com/javafx/2.2" fx:controller="Controller.LobbyController">
+    <children>
+        <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="21.0" prefWidth="450.0" text="Lobby info:"/>
+        <HBox prefHeight="100.0" prefWidth="200.0">
+            <children>
+                <Pane prefHeight="81.0" prefWidth="234.0">
+                    <children>
+                        <VBox id="VBox" alignment="CENTER_RIGHT" layoutX="5.0" layoutY="0.0" prefHeight="81.0"
+                              prefWidth="43.0" spacing="5.0">
+                            <children>
+                                <Label text="Host:"/>
+                                <Label text="ip:"/>
+                            </children>
+                        </VBox>
+                        <VBox id="VBox" alignment="CENTER_LEFT" layoutX="47.0" layoutY="0.0" prefHeight="81.0"
+                              prefWidth="161.0" spacing="5.0">
+                            <children>
+                                <Label fx:id="hostNameField" prefWidth="166.0" text="">
+                                    <VBox.margin>
+                                        <Insets left="5.0" fx:id="x2"/>
+                                    </VBox.margin>
+                                </Label>
+                                <Label fx:id="URIField" prefWidth="166.0" text="" VBox.margin="$x2"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </Pane>
+                <Pane prefHeight="81.0" prefWidth="216.0">
+                    <children>
+                        <VBox id="VBox" alignment="CENTER_RIGHT" layoutX="0.0" layoutY="-2.0" prefHeight="83.0"
+                              prefWidth="57.0" spacing="5.0">
+                            <children>
+                                <Label text="Version:"/>
+                                <Label text="Teams:"/>
+                            </children>
+                        </VBox>
+                        <VBox id="VBox" alignment="CENTER_LEFT" layoutX="62.0" layoutY="-1.0"
+                              prefHeight="80.99990000000253" prefWidth="150.0" spacing="5.0">
+                            <children>
+                                <Label fx:id="versionField" prefWidth="150.0" text=""/>
+                                <Label fx:id="numberOfTeamsField" prefWidth="150.0" text=""/>
+                            </children>
+                        </VBox>
+                    </children>
+                </Pane>
+            </children>
+        </HBox>
+        <HBox alignment="CENTER" prefHeight="158.0" prefWidth="433.0">
+            <children>
+                <Pane prefHeight="158.0" prefWidth="150.0">
+                    <children>
+                        <HBox id="HBox" alignment="CENTER" layoutX="-5.0" layoutY="0.0" minHeight="19.9609375"
+                              prefHeight="32.9609375" prefWidth="161.0" spacing="5.0">
+                            <children>
+                                <Label text="Team 1:"/>
+                                <Button fx:id="joinTeam1Button" mnemonicParsing="false" onAction="#handleJoinTeam1"
+                                        text="Join"/>
+                            </children>
+                        </HBox>
+                        <VBox id="VBox" alignment="CENTER" layoutX="0.0" layoutY="33.0" prefHeight="106.0"
+                              prefWidth="149.99997792968497" spacing="5.0">
+                            <children>
+                                <Label fx:id="team1Player1Field" text=""/>
+                                <Label fx:id="team1Player2Field" text=""/>
+                                <Label fx:id="team1Player3Field" text=""/>
+                            </children>
+                        </VBox>
+                    </children>
+                </Pane>
+                <Pane prefHeight="158.0" prefWidth="150.0">
+                    <children>
+                        <HBox id="HBox" alignment="CENTER" layoutX="-6.0" layoutY="0.0" prefHeight="32.960837500002526"
+                              prefWidth="161.0" spacing="5.0">
+                            <children>
+                                <Label text="Team 2:"/>
+                                <Button fx:id="joinTeam2Button" mnemonicParsing="false" onAction="#handleJoinTeam2"
+                                        text="Join"/>
+                            </children>
+                        </HBox>
+                        <VBox id="VBox" alignment="CENTER" layoutX="8.0" layoutY="33.0" prefHeight="106.0"
+                              prefWidth="136.99990000000253" spacing="5.0">
+                            <children>
+                                <Label fx:id="team2Player1Field" text=""/>
+                                <Label fx:id="team2Player2Field" text=""/>
+                                <Label fx:id="team2Player3Field" text=""/>
+                            </children>
+                        </VBox>
+                    </children>
+                </Pane>
+                <Pane prefHeight="158.0" prefWidth="150.0">
+                    <children>
+                        <HBox id="HBox" alignment="CENTER" layoutX="0.0" layoutY="0.0" prefHeight="32.960845947265625"
+                              prefWidth="150.0" spacing="5.0">
+                            <children>
+                                <Label text="Team 3:"/>
+                                <Button fx:id="joinTeam3Button" mnemonicParsing="false" onAction="#handleJoinTeam3"
+                                        text="Join"/>
+                            </children>
+                        </HBox>
+                        <VBox id="VBox" alignment="CENTER" layoutX="3.0" layoutY="33.0" minHeight="55.0"
+                              prefHeight="105.99996948242188" prefWidth="137.00009999999747" spacing="5.0">
+                            <children>
+                                <Label fx:id="team3Player1Field" text=""/>
+                                <Label fx:id="team3Player2Field" text=""/>
+                                <Label fx:id="team3Player3Field" text=""/>
+                            </children>
+                        </VBox>
+                    </children>
+                </Pane>
+            </children>
+        </HBox>
+        <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+            <children>
+                <VBox alignment="CENTER" prefHeight="81.0" prefWidth="150.0">
+                    <children>
+                        <Label fx:id="player1Field" alignment="CENTER" text="">
+                            <VBox.margin>
+                                <Insets top="30.0" fx:id="x1"/>
+                            </VBox.margin>
+                        </Label>
+                        <Label fx:id="player4Field" text=""/>
+                    </children>
+                </VBox>
+                <VBox alignment="CENTER" prefHeight="200.0" prefWidth="150.0">
+                    <children>
+                        <Label text="Connected players:">
+                            <VBox.margin>
+                                <Insets bottom="10.0"/>
+                            </VBox.margin>
+                        </Label>
+                        <Label fx:id="player2Field" text=""/>
+                        <Label fx:id="player5Field" text=""/>
+                    </children>
+                </VBox>
+                <VBox alignment="CENTER" prefHeight="200.0" prefWidth="150.0">
+                    <children>
+                        <Label fx:id="player3Field" text="" VBox.margin="$x1"/>
+                        <Label fx:id="player6Field" text=""/>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+        <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0" spacing="20.0">
+            <padding>
+                <Insets bottom="20.0" top="5.0"/>
+            </padding>
+            <Button fx:id="playButton" mnemonicParsing="false" onAction="#handlePlay" prefWidth="62.5" text="Play"/>
+            <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" text="Disconnect"/>
+        </HBox>
+    </children>
 </VBox>

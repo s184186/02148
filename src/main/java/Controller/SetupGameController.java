@@ -1,7 +1,6 @@
 package Controller;
 
 import javafx.beans.binding.BooleanBinding;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -10,29 +9,34 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
-import org.jspace.*;
+import org.jspace.ActualField;
+import org.jspace.FormalField;
+import org.jspace.SequentialSpace;
 
 import java.io.IOException;
 import java.util.Scanner;
 
+import static Protocol.Templates.IPPort;
+
 public class SetupGameController {
 
+    private static Scanner in = new Scanner(System.in);
     public Button playButton;
     public RadioButton toggle3;
     public RadioButton toggle2;
-    private MainMenuController mainMenuController;
-    private LobbyModel lobbyModel = new LobbyModel();
-    private static Scanner in = new Scanner(System.in);
-    private Stage lobbyStage;
-
     public ToggleGroup versionToggleGroup, teamNumberToggleGroup;
     public TextField usernameField;
+    private MainMenuController mainMenuController;
+    private LobbyModel lobbyModel = new LobbyModel();
+    private Stage lobbyStage;
 
-    public void initialize(){
+    public void initialize() {
+        //Play button is greyed out if username has not been entered
         BooleanBinding playBinding = new BooleanBinding() {
             {
                 super.bind(usernameField.textProperty());
             }
+
             @Override
             protected boolean computeValue() {
                 return (usernameField.getText().isEmpty());
@@ -40,13 +44,15 @@ public class SetupGameController {
         };
         playButton.disableProperty().bind(playBinding);
 
+        //3 team radio button is greyed out if the normal version is selected
         BooleanBinding teamBinding = new BooleanBinding() {
             {
                 super.bind(versionToggleGroup.selectedToggleProperty());
             }
+
             @Override
             protected boolean computeValue() {
-                return (Integer.valueOf(((RadioButton)versionToggleGroup.getSelectedToggle()).getId()) == 0);
+                return (Integer.valueOf(((RadioButton) versionToggleGroup.getSelectedToggle()).getId()) == 0);
             }
         };
 
@@ -56,8 +62,8 @@ public class SetupGameController {
 
     public void handlePlay() throws IOException, InterruptedException {
         String username = usernameField.getText();
-        int version = Integer.valueOf(((RadioButton)versionToggleGroup.getSelectedToggle()).getId());
-        int numberOfTeams = Integer.valueOf(((RadioButton)teamNumberToggleGroup.getSelectedToggle()).getId());
+        int version = Integer.valueOf(((RadioButton) versionToggleGroup.getSelectedToggle()).getId());
+        int numberOfTeams = Integer.valueOf(((RadioButton) teamNumberToggleGroup.getSelectedToggle()).getId());
 
         SequentialSpace space = new SequentialSpace();
         Server server = new Server(numberOfTeams, version, username, space);
@@ -65,7 +71,7 @@ public class SetupGameController {
         serverThread.setDaemon(true); //Thread should close when main thread closes
         serverThread.start();
 
-        String ip = (String) space.get(new ActualField("IPPORT"), new FormalField(String.class))[1];
+        String ip = (String) space.get(IPPort)[1];
 
         lobbyModel.setIp(ip);
         lobbyModel.setUsername(username);
@@ -87,6 +93,7 @@ public class SetupGameController {
         Scene lobbyScene = new Scene(root);
 
         lobbyStage.setScene(lobbyScene);
+        lobbyStage.setResizable(false);
         lobbyStage.show();
     }
 
@@ -95,6 +102,7 @@ public class SetupGameController {
     }
 
     public void handleNormalToggle() {
+        //Only 2 teams available in normal version
         toggle2.setSelected(true);
         toggle3.setSelected(false);
     }
@@ -103,7 +111,7 @@ public class SetupGameController {
         this.mainMenuController = mainMenuController;
     }
 
-    public Stage getLobbyStage(){
+    public Stage getLobbyStage() {
         return lobbyStage;
     }
 }

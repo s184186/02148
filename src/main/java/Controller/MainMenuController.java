@@ -6,15 +6,15 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
-import org.jspace.*;
+
 import java.io.IOException;
-import static Protocol.Templates.*;
 
 public class MainMenuController {
 
     private MainMenuView mainMenuView;
     private Stage setupGameStage;
-    @FXML private Button hostGame, connectGame, exitGame;
+    @FXML
+    private Button hostGame, connectGame, exitGame;
 
     public void initialize() {
         //Changes appearance of buttons on mouseover
@@ -28,7 +28,7 @@ public class MainMenuController {
         exitGame.setOnMouseExited(e -> exitGame.setStyle("-fx-background-color: transparent"));
     }
 
-    public void handleHostGame() throws IOException{
+    public void handleHostGame() throws IOException {
         setupGameStage = new Stage();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/setupGame.fxml"));
@@ -41,57 +41,9 @@ public class MainMenuController {
 
         setupGameStage.setScene(lobbyScene);
         setupGameStage.show();
-
-        /*TextInputDialog dialog = new TextInputDialog("");
-        dialog.setTitle("Text Input Dialog");
-
-        dialog.setContentText("Please enter your name:");
-        String username = "";
-        // Traditional way to get the response value.
-        Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()){
-            username = result.get();
-        } else {
-            return;
-        }
-
-
-        System.out.println("Plus version?(Y/N)");
-        int version = 0;
-        String answer = in.next();
-
-        int teams = 2;
-
-        if(answer.matches("Y")){
-            version = 1;
-            System.out.println("How many teams?(2/3)");
-            teams = in.nextInt();
-        }
-
-        new Thread(new Server(teams, version, username)).start();
-
-        Space game = null;
-
-        InetAddress inetAddress = null;
-        try {
-            inetAddress = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        String ip = inetAddress.getHostAddress();
-        int port = 11345;
-
-        String URI = "tcp://" + ip + ":" + port + "/game?keep";
-        game = new RemoteSpace(URI);
-        connectUser(username, game);
-
-        System.out.println("Press any key to start game");
-        in.next();
-        game.put("startGame");
-        System.out.println("Starting game");*/
-
     }
-    public void handlePlayBots() throws IOException{
+
+    public void handlePlayBots() throws IOException {
         setupGameStage = new Stage();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/connectToGame.fxml"));
@@ -104,18 +56,15 @@ public class MainMenuController {
 
         setupGameStage.setScene(lobbyScene);
         setupGameStage.show();
-
-        /*connectUser(username, game);
-
-        game.query(new ActualField("startGame"));
-        System.out.println("Host has started game");*/
     }
 
-    public void handleExit(){
+    public void handleExit() {
         mainMenuView.getMainMenuStage().close();
+        //Need to exit since there is a possibility of dangling threads
+        System.exit(-1);
     }
 
-    public void setMainMenuView(MainMenuView mainMenuView){
+    public void setMainMenuView(MainMenuView mainMenuView) {
         this.mainMenuView = mainMenuView;
     }
 

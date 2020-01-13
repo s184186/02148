@@ -15,17 +15,18 @@ public class ConnectToGameController {
 
     public Label connectionFailedLabel;
     public Button playButton;
+    public TextField usernameField, URIField;
     private LobbyModel lobbyModel = new LobbyModel();
     private Stage lobbyStage;
-
-    public TextField usernameField, URIField;
     private MainMenuController mainMenuController;
 
-    public void initialize(){
+    public void initialize() {
+        //Disable play button if either username or ip haven't been typed
         BooleanBinding bb = new BooleanBinding() {
             {
                 super.bind(usernameField.textProperty(), URIField.textProperty());
             }
+
             @Override
             protected boolean computeValue() {
                 return (usernameField.getText().isEmpty() || URIField.getText().isEmpty());
@@ -36,6 +37,8 @@ public class ConnectToGameController {
 
     public void handlePlay() throws IOException, InterruptedException {
         String username = usernameField.getText();
+
+        //Reset text if a previous connection attempt has failed
         connectionFailedLabel.setText("");
 
         lobbyModel.setIp(URIField.getText());
@@ -50,8 +53,9 @@ public class ConnectToGameController {
         lobbyController.setConnectToGameController(this);
         lobbyController.setLobbyModel(lobbyModel);
         lobbyController.setHost(false);
-        if(lobbyController.setFields()){
 
+        //Is connection refused?
+        if (lobbyController.setFields()) {
             mainMenuController.getSetupGameStage().close();
 
             Scene lobbyScene = new Scene(root);
@@ -59,7 +63,7 @@ public class ConnectToGameController {
             lobbyStage.setScene(lobbyScene);
             lobbyStage.show();
         } else {
-            connectionFailedLabel.setText("User with that name already exists");
+            connectionFailedLabel.setText("Unable to connect. Either lobby is full or username is in use");
         }
     }
 

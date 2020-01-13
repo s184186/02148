@@ -77,7 +77,7 @@ public class User {
             if(connect.matches("Y")){
 
                 game.put("connect", username, "yes");
-                info = (String) game.get(lobbyInfo(username).getFields())[2];
+                info = (String) game.get(lobbyInfoUsers(username).getFields())[2];
 
                 System.out.println("Connected users: " +info);
 

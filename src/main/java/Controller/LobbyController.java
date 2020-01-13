@@ -7,6 +7,7 @@ import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 import org.jspace.Space;
+
 import java.io.IOException;
 
 import static Protocol.Templates.*;
@@ -19,8 +20,8 @@ public class LobbyController {
     public Label team2Player1Field, team2Player2Field, team2Player3Field;
     public Label team3Player1Field, team3Player2Field, team3Player3Field;
     public Label hostNameField, versionField, numberOfTeamsField;
-    public Label player1Field, player2Field, player3Field, player4Field, player5Field,player6Field;
-    public Button joinTeam1Button, joinTeam2Button,joinTeam3Button, playButton, cancelButton;
+    public Label player1Field, player2Field, player3Field, player4Field, player5Field, player6Field;
+    public Button joinTeam1Button, joinTeam2Button, joinTeam3Button, playButton, cancelButton;
 
     private Label[] playerFields;
     private Button[] joinTeamButtons;
@@ -35,138 +36,24 @@ public class LobbyController {
     private Thread serverThread, lobbyUpdaterThread;
     private RemoteSpace game;
 
-    public void initialize(){
-        Label[] team1 = new Label[]{team1Player1Field, team1Player2Field, team1Player3Field};
-        Label[] team2 = new Label[]{team2Player1Field, team2Player2Field, team2Player3Field};
-        Label[] team3 = new Label[]{team3Player1Field, team3Player2Field, team3Player3Field};
-        teams = new Label[][]{team1, team2, team3};
-
-        joinTeamButtons = new Button[]{joinTeam1Button, joinTeam2Button, joinTeam3Button};
-
-        playerFields = new Label[]{player1Field,player2Field,player3Field,player4Field,player5Field,player6Field};
-    }
-
-    public boolean setFields() throws IOException, InterruptedException {
-        if(!isHost){
-            playButton.setDisable(true);
-        }
-        ip = lobbyModel.getIp();
-        URI = "tcp://" + ip + "/game?keep";
-        username = lobbyModel.getUsername();
-
-        game = new RemoteSpace(URI);
-        lobbyUpdaterThread = connectUser(username, game, playerFields, teams, joinTeamButtons, cancelButton);
-        if(lobbyUpdaterThread ==null){
-            game.close();
-            return false;
-        }
-
-        version = (Integer) game.get(new ActualField("lobbyInfoVersion"), new ActualField(username), new FormalField(Integer.class))[2];
-        numberOfTeams = (Integer) game.get(new ActualField("lobbyInfoNTeams"), new ActualField(username), new FormalField(Integer.class))[2];
-        host = (String) game.get(new ActualField("lobbyInfoHost"), new ActualField(username), new FormalField(String.class))[2];
-
-        hostNameField.setText(host);
-        String versionText = "Normal";
-        if(version == 1){
-            versionText = "Plus";
-        }
-        if(numberOfTeams==2){
-            joinTeam3Button.setDisable(true);
-        }
-        versionField.setText(versionText);
-        numberOfTeamsField.setText(String.valueOf(numberOfTeams));
-        URIField.setText(ip);
-        return true;
-    }
-
-    public void handlePlay() {
-    }
-
-    public void handleCancel() {
-        if(setupGameController != null){
-            serverThread.interrupt();
-            setupGameController.getLobbyStage().close();
-        } else {
-            connectToGameController.getLobbyStage().close();
-        }
-
-        lobbyUpdaterThread.interrupt();
-
-        //JSpace prints the stacktrace of an IOException, nothing went wrong
-        try {
-            game.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void handleJoinTeam1() {
-        if(joinTeam1Button.getText().matches("Leave")){
-            try {
-                game.put("team", "leaveTeam", username, 1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                game.put("team", "joinTeam", username, 1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void handleJoinTeam2() {
-        if(joinTeam2Button.getText().matches("Leave")){
-            try {
-                game.put("team", "leaveTeam", username, 2);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                game.put("team", "joinTeam", username, 2);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void handleJoinTeam3() {
-        if(joinTeam3Button.getText().matches("Leave")){
-            try {
-                game.put("team", "leaveTeam", username, 3);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                game.put("team", "joinTeam", username, 3);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     public static Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons,
                                      Button cancelButton) throws InterruptedException {
         String infoUsers, infoTeams;
         game.put("connectToGameReq", username);
 
-        Object[] ack = game.get(connectToGameAck(username).getFields());
+        Object[] ack = game.get(connectToGameAck(username));
 
-        if(((String) ack[2]).matches("ok")) {
-
-            game.put("connect", username, "yes");
-            infoUsers = (String) game.get(lobbyInfo(username).getFields())[2];
-            infoTeams = (String) game.get(new ActualField("lobbyInfoTeams"), new ActualField(username), new FormalField(String.class))[2];
+        if (((String) ack[2]).matches("ok")) {
+            //Get lobbyinfo
+            infoUsers = (String) game.get(lobbyInfoUsers(username))[2];
+            infoTeams = (String) game.get(lobbyInfoTeams(username))[2];
             String[] namesinfo = infoUsers.split(" ");
             String[] teamsinfo = infoTeams.split(" ");
-            for(int i = 0; i < namesinfo.length; i++){
+            for (int i = 0; i < namesinfo.length; i++) {
                 playerFields[i].setText(namesinfo[i]);
                 int teamN = Integer.valueOf(teamsinfo[i]);
-                if(teamN != 0) {
-                    Label[] team = teams[teamN-1];
+                if (teamN != 0) {
+                    Label[] team = teams[teamN - 1];
                     for (Label field : team) {
                         if (field.getText().matches("")) {
                             field.setText(namesinfo[i]);
@@ -180,7 +67,7 @@ public class LobbyController {
             return null;
         }
 
-        int numberOfTeams = (Integer) game.query(new ActualField("lobbyInfoNTeams"), new ActualField(username), new FormalField(Integer.class))[2];
+        int numberOfTeams = (Integer) game.query(lobbyInfoNTeams(username))[2];
 
         LobbyUpdater lobbyUpdater = new LobbyUpdater(game, username, playerFields, teams, joinTeamButtons, cancelButton, numberOfTeams);
         Thread lobbyUpdaterThread = new Thread(lobbyUpdater);
@@ -188,6 +75,126 @@ public class LobbyController {
         lobbyUpdaterThread.start();
 
         return lobbyUpdaterThread;
+    }
+
+    public void initialize() {
+        Label[] team1 = new Label[]{team1Player1Field, team1Player2Field, team1Player3Field};
+        Label[] team2 = new Label[]{team2Player1Field, team2Player2Field, team2Player3Field};
+        Label[] team3 = new Label[]{team3Player1Field, team3Player2Field, team3Player3Field};
+        teams = new Label[][]{team1, team2, team3};
+
+        joinTeamButtons = new Button[]{joinTeam1Button, joinTeam2Button, joinTeam3Button};
+
+        playerFields = new Label[]{player1Field, player2Field, player3Field, player4Field, player5Field, player6Field};
+    }
+
+    public boolean setFields() throws IOException, InterruptedException {
+        if (!isHost) {
+            playButton.setDisable(true);
+        }
+        ip = lobbyModel.getIp();
+        URI = "tcp://" + ip + "/game?keep";
+        username = lobbyModel.getUsername();
+
+        game = new RemoteSpace(URI);
+        lobbyUpdaterThread = connectUser(username, game, playerFields, teams, joinTeamButtons, cancelButton);
+        if (lobbyUpdaterThread == null) {
+            //Not calling game.close() leaves a dangling thread, but gate is blocked
+            //Might be related to this https://github.com/pSpaces/jSpace/issues/12
+            //TODO: Find out if this can be fixed
+            //game.close();
+            return false;
+        }
+
+        version = (Integer) game.get(lobbyInfoVersion(username))[2];
+        numberOfTeams = (Integer) game.get(lobbyInfoNTeams(username))[2];
+        host = (String) game.get(lobbyInfoHost(username))[2];
+
+        hostNameField.setText(host);
+        String versionText = "Normal";
+
+        if (version == 1) {
+            versionText = "Plus";
+        }
+
+        if (numberOfTeams == 2) {
+            joinTeam3Button.setDisable(true);
+        }
+
+        versionField.setText(versionText);
+        numberOfTeamsField.setText(String.valueOf(numberOfTeams));
+        URIField.setText(ip);
+        return true;
+    }
+
+    public void handlePlay() {
+    }
+
+    public void handleCancel() {
+        if (setupGameController != null) {
+            serverThread.interrupt();
+            setupGameController.getLobbyStage().close();
+        } else {
+            connectToGameController.getLobbyStage().close();
+        }
+
+        lobbyUpdaterThread.interrupt();
+
+        //JSpace prints the stacktrace of an IOException, nothing went wrong
+        try {
+            //Not sure why game.close() works here
+            game.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleJoinTeam1() {
+        if (joinTeam1Button.getText().matches("Leave")) {
+            try {
+                game.put("teamReq", "leaveTeam", username, 1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                game.put("teamReq", "joinTeam", username, 1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void handleJoinTeam2() {
+        if (joinTeam2Button.getText().matches("Leave")) {
+            try {
+                game.put("teamReq", "leaveTeam", username, 2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                game.put("teamReq", "joinTeam", username, 2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void handleJoinTeam3() {
+        if (joinTeam3Button.getText().matches("Leave")) {
+            try {
+                game.put("teamReq", "leaveTeam", username, 3);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                game.put("teamReq", "joinTeam", username, 3);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void setLobbyModel(LobbyModel lobbyModel) {
@@ -202,10 +209,6 @@ public class LobbyController {
         this.connectToGameController = connectToGameController;
     }
 
-    public boolean isHost() {
-        return isHost;
-    }
-
     public void setHost(boolean host) {
         isHost = host;
     }
@@ -215,7 +218,7 @@ public class LobbyController {
     }
 }
 
-class LobbyUpdater implements Runnable{
+class LobbyUpdater implements Runnable {
 
     private String username;
     private Label[] playerFields;
@@ -227,7 +230,7 @@ class LobbyUpdater implements Runnable{
     private volatile boolean exit;
 
     public LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams,
-                        Button[] joinTeamButtons, Button cancelButton, int numberOfTeams){
+                        Button[] joinTeamButtons, Button cancelButton, int numberOfTeams) {
         this.space = space;
         this.username = username;
         this.playerFields = playerFields;
@@ -239,23 +242,26 @@ class LobbyUpdater implements Runnable{
 
     public void run() {
         try {
-            while(!exit){
+            while (!exit) {
 
-                Object[] lobbyUpdate = space.get(lobbyUpdate(username).getFields());
+                Object[] lobbyUpdate = space.get(lobbyUpdate(username));
                 String type = (String) lobbyUpdate[1];
                 String actor = (String) lobbyUpdate[2];
 
-                switch(type){
+                switch (type) {
                     case "disconnected":
-                        if(actor.matches(username)){
+                        //This user has lost connection
+                        if (actor.matches(username)) {
                             Platform.runLater(
                                     () -> {
                                         cancelButton.fire();
                                     }
                             );
                         } else {
+                            //Another user has lost connection
                             Platform.runLater(
                                     () -> {
+                                        //Remove username from teams and connected user
                                         for (Label[] team : teams) {
                                             for (Label playerField : team) {
                                                 if (playerField.getText().matches(actor)) {
@@ -287,8 +293,9 @@ class LobbyUpdater implements Runnable{
                         System.out.println(actor + " connected to the lobby");
                         Platform.runLater(
                                 () -> {
-                                    for(Label playerField: playerFields){
-                                        if(playerField.getText().matches("") && !actor.matches(username)){
+                                    //Update labels
+                                    for (Label playerField : playerFields) {
+                                        if (playerField.getText().matches("") && !actor.matches(username)) {
                                             playerField.setText(actor);
                                             break;
                                         }
@@ -297,7 +304,7 @@ class LobbyUpdater implements Runnable{
                         );
                         break;
                     case "joinedTeam":
-                        int teamN = (Integer) lobbyUpdate[4]-1;
+                        int teamN = (Integer) lobbyUpdate[4] - 1;
                         Label[] teamJoin = teams[teamN];
                         for (int i = 0; i < 3; i++) {
                             if (teamJoin[i].getText().matches("")) {
@@ -322,9 +329,9 @@ class LobbyUpdater implements Runnable{
                         }
                         break;
                     case "leftTeam":
-                        for(Label[] team: teams){
-                            for(Label playerField: team){
-                                if(playerField.getText().matches(actor)){
+                        for (Label[] team : teams) {
+                            for (Label playerField : team) {
+                                if (playerField.getText().matches(actor)) {
                                     Platform.runLater(
                                             () -> {
                                                 playerField.setText("");
@@ -348,7 +355,7 @@ class LobbyUpdater implements Runnable{
         }
     }
 
-    public void stop(){
+    public void stop() {
         exit = true;
     }
 }
