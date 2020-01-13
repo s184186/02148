@@ -247,7 +247,6 @@ class LobbyUpdater implements Runnable {
                 Object[] lobbyUpdate = space.get(lobbyUpdate(username));
                 String type = (String) lobbyUpdate[1];
                 String actor = (String) lobbyUpdate[2];
-
                 switch (type) {
                     case "disconnected":
                         //This user has lost connection
