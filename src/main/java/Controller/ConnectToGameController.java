@@ -1,8 +1,11 @@
 package Controller;
 
+import javafx.beans.binding.BooleanBinding;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -10,19 +13,33 @@ import java.io.IOException;
 
 public class ConnectToGameController {
 
+    public Label connectionFailedLabel;
+    public Button playButton;
     private LobbyModel lobbyModel = new LobbyModel();
     private Stage lobbyStage;
 
     public TextField usernameField, URIField;
     private MainMenuController mainMenuController;
 
+    public void initialize(){
+        BooleanBinding bb = new BooleanBinding() {
+            {
+                super.bind(usernameField.textProperty(), URIField.textProperty());
+            }
+            @Override
+            protected boolean computeValue() {
+                return (usernameField.getText().isEmpty() || URIField.getText().isEmpty());
+            }
+        };
+        playButton.disableProperty().bind(bb);
+    }
+
     public void handlePlay() throws IOException, InterruptedException {
         String username = usernameField.getText();
+        connectionFailedLabel.setText("");
 
         lobbyModel.setIp(URIField.getText());
         lobbyModel.setUsername(username);
-
-        mainMenuController.getSetupGameStage().close();
 
         lobbyStage = new Stage();
 
@@ -33,12 +50,17 @@ public class ConnectToGameController {
         lobbyController.setConnectToGameController(this);
         lobbyController.setLobbyModel(lobbyModel);
         lobbyController.setHost(false);
-        lobbyController.setFields();
+        if(lobbyController.setFields()){
 
-        Scene lobbyScene = new Scene(root);
+            mainMenuController.getSetupGameStage().close();
 
-        lobbyStage.setScene(lobbyScene);
-        lobbyStage.show();
+            Scene lobbyScene = new Scene(root);
+
+            lobbyStage.setScene(lobbyScene);
+            lobbyStage.show();
+        } else {
+            connectionFailedLabel.setText("User with that name already exists");
+        }
     }
 
     public void handleCancel() {

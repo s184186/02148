@@ -1,8 +1,11 @@
 package Controller;
 
+import javafx.beans.binding.BooleanBinding;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
@@ -14,6 +17,9 @@ import java.util.Scanner;
 
 public class SetupGameController {
 
+    public Button playButton;
+    public RadioButton toggle3;
+    public RadioButton toggle2;
     private MainMenuController mainMenuController;
     private LobbyModel lobbyModel = new LobbyModel();
     private static Scanner in = new Scanner(System.in);
@@ -21,6 +27,32 @@ public class SetupGameController {
 
     public ToggleGroup versionToggleGroup, teamNumberToggleGroup;
     public TextField usernameField;
+
+    public void initialize(){
+        BooleanBinding playBinding = new BooleanBinding() {
+            {
+                super.bind(usernameField.textProperty());
+            }
+            @Override
+            protected boolean computeValue() {
+                return (usernameField.getText().isEmpty());
+            }
+        };
+        playButton.disableProperty().bind(playBinding);
+
+        BooleanBinding teamBinding = new BooleanBinding() {
+            {
+                super.bind(versionToggleGroup.selectedToggleProperty());
+            }
+            @Override
+            protected boolean computeValue() {
+                return (Integer.valueOf(((RadioButton)versionToggleGroup.getSelectedToggle()).getId()) == 0);
+            }
+        };
+
+        toggle3.disableProperty().bind(teamBinding);
+
+    }
 
     public void handlePlay() throws IOException, InterruptedException {
         String username = usernameField.getText();
@@ -60,6 +92,11 @@ public class SetupGameController {
 
     public void handleCancel() {
         mainMenuController.getSetupGameStage().close();
+    }
+
+    public void handleNormalToggle() {
+        toggle2.setSelected(true);
+        toggle3.setSelected(false);
     }
 
     public void setMainMenuController(MainMenuController mainMenuController) {

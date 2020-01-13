@@ -18,12 +18,17 @@
       <Label alignment="CENTER" text="Enter ip:" />
       <TextField fx:id="URIField" prefWidth="238.9998779296875" />
     </HBox>
-    <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0" spacing="20.0">
-      <padding>
-        <Insets bottom="20.0" top="5.0" />
-      </padding>
-      <Button mnemonicParsing="false" onAction="#handlePlay" prefWidth="79.0" text="Connect" />
-      <Button mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
-    </HBox>
+    <VBox id="VBox" alignment="CENTER" spacing="5.0">
+      <children>
+        <Label fx:id="connectionFailedLabel" text="" />
+        <HBox alignment="CENTER" prefHeight="41.0" prefWidth="360.0" spacing="20.0">
+          <Button fx:id="playButton" mnemonicParsing="false" onAction="#handlePlay" prefWidth="79.0" text="Connect" />
+          <Button mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
+          <padding>
+            <Insets />
+          </padding>
+        </HBox>
+      </children>
+    </VBox>
   </children>
 </VBox>

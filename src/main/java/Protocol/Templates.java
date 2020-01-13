@@ -9,7 +9,7 @@ public final class Templates {
     public static final Template numberOfPlayers = new Template(new ActualField("numberOfPlayers"), new FormalField(Integer.class));
     public static final Template connect(String s){ return new Template(new ActualField("connect"), new ActualField(s), new FormalField(String.class));}
     public static final Template connectToGameAck(String s){ return new Template(new ActualField("connectToGameAck"), new ActualField(s), new FormalField(String.class));}
-    public static final Template lobbyInfo(String s){ return new Template(new ActualField("lobbyInfo"), new ActualField(s), new FormalField(String.class));}
+    public static final Template lobbyInfo(String s){ return new Template(new ActualField("lobbyInfoUsers"), new ActualField(s), new FormalField(String.class));}
 
     public static final Template lobbyUpdate(String receiver){ return new Template(new ActualField("lobbyUpdate"), new FormalField(String.class), new FormalField(String.class), new ActualField(receiver), new FormalField(Integer.class));}
 

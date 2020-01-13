@@ -11,11 +11,8 @@ import static Protocol.Templates.*;
 public class Server implements Runnable {
 
     private Space game;
-    private int numberOfTeams;
-    private int version;
-    private String host;
-    private String URI;
-    private String gate;
+    private int numberOfTeams, version;
+    private String host, gate;
 
     public Server(int numberOfTeams, int version, String host, Space game){
         this.numberOfTeams = numberOfTeams;
@@ -25,19 +22,16 @@ public class Server implements Runnable {
     }
 
     public void run() {
+        Thread playerConnectorThread = null, playersConnectedThread = null, teamDistributorThread = null;
         PlayerConnector playerConnector = null;
-        Thread playerConnectorThread = null;
         PlayersConnected playersConnected = null;
-        Thread playersConnectedThread = null;
         TeamDistributor teamDistributor = null;
-        Thread teamDistributorThread = null;
         SpaceRepository gameRepository = null;
         try {
             System.out.println("Starting server");
+
             //Create game server
             gameRepository = new SpaceRepository();
-
-            //Space where users and server communicate
 
             //Space where server threads communicate
             SequentialSpace server = new SequentialSpace();
@@ -45,38 +39,39 @@ public class Server implements Runnable {
             //Keep track of connected players
 
             server.put("numberOfPlayers", 0);
-            server.put("maxNumberOfPlayers", 6);
+            server.put("teamPlayers", 1, 0);
+            server.put("teamPlayers", 2, 0);
+            if(version==0){
+                server.put("maxNumberOfPlayers", 4);
+            } else {
+                server.put("teamPlayers", 3, 0);
+                server.put("maxNumberOfPlayers", 6);
+            }
 
             // Setting up URI
-            InetAddress inetAddress = null;
+            InetAddress inetAddress;
             inetAddress = InetAddress.getLocalHost();
             String ip = inetAddress.getHostAddress();
             int port = 11345;
             gate = "tcp://" + ip + ":" + port + "?keep";
-            URI = "tcp://" + ip + ":" + port + "/game?keep";
+            String URI = "tcp://" + ip + ":" + port + "/game?keep";
             game.put("IPPORT", ip + ":" + port);
-            System.out.println("A game is hosted on URI: " + ip + ":" + port);
+            System.out.println("A game is hosted on IP: " + ip + ":" + port);
             // Opening gate at given URI
             gameRepository.add("game", game);
             gameRepository.addGate(gate);
 
             //Look for players connecting
             playerConnector = new PlayerConnector(game, server, host, version, numberOfTeams);
-            playerConnectorThread = new Thread(playerConnector);
-            playerConnectorThread.setDaemon(true);
-            playerConnectorThread.start();
+            playerConnectorThread = startThread(playerConnector);
 
             //Check players are still connected
             playersConnected = new PlayersConnected(server, game);
-            playersConnectedThread = new Thread(playersConnected);
-            playersConnectedThread.setDaemon(true);
-            playersConnectedThread.start();
+            playersConnectedThread = startThread(playersConnected);
 
             //Look for joinTeam requests
             teamDistributor = new TeamDistributor(server, game, numberOfTeams);
-            teamDistributorThread = new Thread(teamDistributor);
-            teamDistributorThread.setDaemon(true);
-            teamDistributorThread.start();
+            teamDistributorThread = startThread(teamDistributor);
 
             //Wait for host to start game
             game.query(new ActualField("startGame"));
@@ -107,6 +102,13 @@ public class Server implements Runnable {
             teamDistributor.stop();
             teamDistributorThread.interrupt();
         }
+    }
+
+    private Thread startThread(Runnable object){
+        Thread objectThread = new Thread(object);
+        objectThread.setDaemon(true);
+        objectThread.start();
+        return objectThread;
     }
 
     private void launchGameServer(Space server, Space game) throws InterruptedException {
@@ -149,13 +151,14 @@ class PlayerConnector implements Runnable{
                 System.out.println("Server: " + username + " is trying to connect");
 
                 //Check if user with that name already connected
-                if(server.queryp(new ActualField("connectedUser"), new ActualField(username)) != null){
+                if(server.queryp(new ActualField("connectedUser"), new ActualField(username), new FormalField(Integer.class)) != null){
                     System.out.println("Server: User with that username already connected");
                     game.put("connectToGameAck", username, "ko");
                     continue;
                 }
 
                 int n = (Integer) server.get(numberOfPlayers.getFields())[1];
+                game.getp(new ActualField("lobbyUpdate"), new ActualField("disconnected"), new ActualField(username), new ActualField(username), new ActualField(0));
 
                 //Max number of players in lobby?
                 if (n != maxPlayers) {
@@ -170,14 +173,17 @@ class PlayerConnector implements Runnable{
                     server.put("numberOfPlayers", n+1);
 
                     StringBuilder connectedUsers = new StringBuilder();
+                    StringBuilder userTeams = new StringBuilder();
 
                     //Inform connected users of newly connected user
                     Object[][] users = server.queryAll(connectedUser.getFields()).toArray(new Object[0][]);
                     for (Object[] user: users) {
+                        userTeams.append(user[2]).append(" ");
                         connectedUsers.append(user[1]).append(" ");
                         game.put("lobbyUpdate", "connected", username, user[1], 0);
                     }
-                    game.put("lobbyInfo", username, connectedUsers.toString());
+                    game.put("lobbyInfoUsers", username, connectedUsers.toString());
+                    game.put("lobbyInfoTeams", username, userTeams.toString());
                     game.put("lobbyInfoVersion", username, version);
                     game.put("lobbyInfoNTeams", username, numberOfTeams);
                     game.put("lobbyInfoHost", username, host);
@@ -214,7 +220,7 @@ class PlayersConnected implements Runnable {
                 Object[][] regUsers = server.queryAll(connectedUser.getFields()).toArray(new Object[0][]);
                 for(int i = 0; i < regUsers.length; i++){
                     game.put("lobbyUpdate", "ping", "", regUsers[i][1], 0);
-                    Thread.sleep(1000);
+                    Thread.sleep(300);
                     Object[] ack = game.getp(new ActualField("pingack"), new ActualField(regUsers[i][1]));
                     if(ack == null){
                         Object[][] users = server.queryAll(connectedUser.getFields()).toArray(new Object[0][]);
@@ -222,7 +228,9 @@ class PlayersConnected implements Runnable {
                             game.put("lobbyUpdate", "disconnected", regUsers[i][1], user[1], 0);
                         }
                         System.out.println("User: " + regUsers[i][1] + " disconnected from the lobby");
-                        server.get(new ActualField("connectedUser"), new ActualField(regUsers[i][1]), new FormalField(Integer.class));
+                        Object[] user = server.get(new ActualField("connectedUser"), new ActualField(regUsers[i][1]), new FormalField(Integer.class));
+                        Object[] teamInfo = server.get(new ActualField("teamPlayers"), new ActualField(user[2]), new FormalField(Integer.class));
+                        server.put("teamPlayers", user[2], (Integer) teamInfo[2] - 1);
                     }
                 }
 
@@ -242,7 +250,6 @@ class TeamDistributor implements Runnable {
     private volatile boolean exit;
     private Space server, game;
     private int numberOfTeams;
-    private int[] teams = new int[3];
 
     public TeamDistributor(Space server, Space game, int numberOfTeams) {
         this.server = server;
@@ -251,19 +258,21 @@ class TeamDistributor implements Runnable {
     }
 
     public void run(){
-
         while(!exit){
             try {
                 Object[] info = game.get(new ActualField("team"), new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
                 int team = (Integer) info[3];
                 String name = (String) info[2];
                 if(((String) info[1]).matches("joinTeam")) {
-                    System.out.println("Server: " + name + " trying to join team " + team);
+                    //System.out.println("Server: " + name + " trying to join team " + team);
                     if (canJoinTeam(team)) {
-                        teams[team - 1]++;
+                        System.out.println("here1");
+                        Object[] teamInfo = server.get(new ActualField("teamPlayers"), new ActualField(team), new FormalField(Integer.class));
+                        System.out.println("here2");
+                        server.put("teamPlayers", team, (Integer) teamInfo[2] + 1);
                         Object[] userinfo = server.get(new ActualField("connectedUser"), new ActualField(name), new FormalField(Integer.class));
                         if((Integer) userinfo[2] != 0){
-                            System.out.println("Server: already on team " + team);
+                            //System.out.println("Server: already on team " + team);
                             game.put("joinTeamAck", name, "ko");
                             return;
                         }
@@ -273,13 +282,14 @@ class TeamDistributor implements Runnable {
                         for (Object[] user : users) {
                             game.put("lobbyUpdate", "joinedTeam", name, user[1], team);
                         }
-                        System.out.println("Server: " + name + " joined team " + team);
+                        //System.out.println("Server: " + name + " joined team " + team);
                     } else {
-                        System.out.println("Server: team " + team + " full");
+                        //System.out.println("Server: team " + team + " full");
                         game.put("joinTeamAck", name, "ko");
                     }
                 } else {
-                    teams[team - 1]--;
+                    Object[] teamInfo = server.get(new ActualField("teamPlayers"), new ActualField(team), new FormalField(Integer.class));
+                    server.put("teamPlayers", team, (Integer) teamInfo[2] - 1);
                     server.get(new ActualField("connectedUser"), new ActualField(name), new FormalField(Integer.class));
                     server.put("connectedUser", name, 0);
                     game.put("leaveTeamAck", name, "ok");
@@ -287,7 +297,7 @@ class TeamDistributor implements Runnable {
                     for (Object[] user : users) {
                         game.put("lobbyUpdate", "leftTeam", name, user[1], 0);
                     }
-                    System.out.println("Server: " + name + " joined team " + team);
+                    //System.out.println("Server: " + name + " joined team " + team);
                 }
 
             } catch (InterruptedException e) {
@@ -297,10 +307,20 @@ class TeamDistributor implements Runnable {
     }
 
     private boolean canJoinTeam(int team){
+        int team1 = 0, team2 = 0, team3 = 0;
+        try {
+            team1 = (Integer) server.query(new ActualField("teamPlayers"), new ActualField(1), new FormalField(Integer.class))[2];
+            team2 = (Integer) server.query(new ActualField("teamPlayers"), new ActualField(2), new FormalField(Integer.class))[2];
+            if(numberOfTeams==3) {
+                team3 = (Integer) server.query(new ActualField("teamPlayers"), new ActualField(3), new FormalField(Integer.class))[2];
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         if(numberOfTeams == 2){
-            return (team == 1 && teams[0] < 2) || (team == 2 && teams[1] < 2);
+            return (team == 1 && team1 < 2) || (team == 2 && team2 < 2);
         } else {
-            return (team == 1 && teams[0] < 2) || (team == 2 && teams[1] < 2)|| (team == 3 && teams[2] < 2);
+            return (team == 1 && team1 < 2) || (team == 2 && team2 < 2)|| (team == 3 && team3 < 2);
         }
     }
 
