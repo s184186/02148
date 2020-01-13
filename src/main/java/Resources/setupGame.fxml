@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox id="usernameField" alignment="CENTER" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="Controller.SetupGameController">
+  <Label text="Choose your settings and press play to begin!" />
+  <HBox alignment="CENTER" prefHeight="50.0" prefWidth="350.0">
+    <Label alignment="CENTER" text="Enter username:" />
+    <TextField fx:id="usernameField" prefWidth="200.0" />
+  </HBox>
+  <HBox alignment="CENTER" prefHeight="50.0" prefWidth="350.0" spacing="10.0">
+    <Label text="Version:" />
+    <RadioButton id="0" mnemonicParsing="false" selected="true" text="Normal">
+      <toggleGroup>
+        <ToggleGroup fx:id="versionToggleGroup" />
+      </toggleGroup>
+    </RadioButton>
+    <RadioButton id="1" mnemonicParsing="false" text="Plus" toggleGroup="$versionToggleGroup" />
+  </HBox>
+  <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0" spacing="10.0">
+    <Label text="Number of teams:" />
+    <RadioButton id="2" mnemonicParsing="false" selected="true" text="2">
+      <toggleGroup>
+        <ToggleGroup fx:id="teamNumberToggleGroup" />
+      </toggleGroup>
+    </RadioButton>
+    <RadioButton id="3" mnemonicParsing="false" text="3" toggleGroup="$teamNumberToggleGroup" />
+  </HBox>
+  <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0" spacing="20.0">
+    <padding>
+      <Insets bottom="20.0" top="5.0" />
+    </padding>
+    <Button mnemonicParsing="false" onAction="#handlePlay" prefWidth="62.5" text="Play" />
+    <Button mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
+  </HBox>
+  <padding>
+    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+  </padding>
+</VBox>

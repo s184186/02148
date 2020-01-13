@@ -1,3 +1,4 @@
+/*
 package Protocol;
 
 import org.jspace.ActualField;
@@ -166,4 +167,5 @@ class LobbyUpdater implements Runnable{
         exit = true;
     }
 }
+*/
 
