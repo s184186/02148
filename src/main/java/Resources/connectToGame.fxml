@@ -9,13 +9,13 @@
 
 <VBox alignment="CENTER" prefHeight="200.0" prefWidth="360.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="Controller.ConnectToGameController">
   <children>
-    <Label alignment="TOP_LEFT" contentDisplay="CENTER" text="Choose username and enter URI" />
+    <Label alignment="TOP_LEFT" contentDisplay="CENTER" text="Choose username and enter ip" />
     <HBox alignment="CENTER" prefHeight="50.0" prefWidth="350.0">
       <Label alignment="CENTER" prefWidth="90.0" text="Enter username:" />
       <TextField fx:id="usernameField" prefWidth="200.0" />
     </HBox>
     <HBox alignment="CENTER" prefHeight="50.0" prefWidth="350.0">
-      <Label alignment="CENTER" text="Enter URI:" />
+      <Label alignment="CENTER" text="Enter ip:" />
       <TextField fx:id="URIField" prefWidth="238.9998779296875" />
     </HBox>
     <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0" spacing="20.0">

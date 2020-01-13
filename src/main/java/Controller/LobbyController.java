@@ -1,7 +1,6 @@
 package Controller;
 
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import org.jspace.ActualField;
@@ -34,6 +33,7 @@ public class LobbyController {
     public Label player2Field;
     public Label player3Field;
     public Label player6Field;
+    public Button cancelButton;
     private Label[] playerFields;
 
     private Label[] team1;
@@ -46,7 +46,7 @@ public class LobbyController {
     private ConnectToGameController connectToGameController;
     private LobbyModel lobbyModel;
     private int numberOfTeams = 2, version = 0;
-    private String host, username, URI;
+    private String host, username, ip, URI;
     private Thread serverThread;
     private Thread lobbyUpdaterThread;
     private RemoteSpace game;
@@ -65,20 +65,21 @@ public class LobbyController {
             playButton.setDisable(true);
         }
 
-        URI = lobbyModel.getURI();
+        ip = lobbyModel.getIp();
+        URI = "tcp://" + ip + "/game?keep";
         username = lobbyModel.getUsername();
 
         game = new RemoteSpace(URI);
-        lobbyUpdaterThread = connectUser(username, game, playerFields, teams, joinTeamButtons);
+        lobbyUpdaterThread = connectUser(username, game, playerFields, teams, joinTeamButtons, cancelButton);
 
         version = (Integer) game.get(new ActualField("lobbyInfoVersion"), new ActualField(username), new FormalField(Integer.class))[2];
         numberOfTeams = (Integer) game.get(new ActualField("lobbyInfoNTeams"), new ActualField(username), new FormalField(Integer.class))[2];
         host = (String) game.get(new ActualField("lobbyInfoHost"), new ActualField(username), new FormalField(String.class))[2];
 
         hostNameField.setText(host);
-        versionField.setText(String.valueOf(lobbyModel.getVersion()));
-        numberOfTeamsField.setText(String.valueOf(lobbyModel.getNumberOfTeams()));
-        URIField.setText(URI);
+        versionField.setText(String.valueOf(version));
+        numberOfTeamsField.setText(String.valueOf(numberOfTeams));
+        URIField.setText(ip);
     }
 
     public void handlePlay() {
@@ -150,7 +151,7 @@ public class LobbyController {
         }
     }
 
-    public static Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons) throws InterruptedException {
+    public static Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons, Button cancelButton) throws InterruptedException {
         String info;
         game.put("connectToGameReq", username);
 
@@ -171,7 +172,7 @@ public class LobbyController {
             System.exit(0);
         }
 
-        LobbyUpdater lobbyUpdater = new LobbyUpdater(game, username, playerFields, teams, joinTeamButtons);
+        LobbyUpdater lobbyUpdater = new LobbyUpdater(game, username, playerFields, teams, joinTeamButtons, cancelButton);
         Thread lobbyUpdaterThread = new Thread(lobbyUpdater);
         lobbyUpdaterThread.setDaemon(true);
         lobbyUpdaterThread.start();
@@ -210,15 +211,18 @@ class LobbyUpdater implements Runnable{
     private Label[] playerFields;
     private Label[][] teams;
     private Button[] joinTeamButtons;
+    private Button cancelButton;
     private Space space;
     private volatile boolean exit;
 
-    public LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons){
+    public LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams,
+                        Button[] joinTeamButtons, Button cancelButton){
         this.space = space;
         this.username = username;
         this.playerFields = playerFields;
         this.teams = teams;
         this.joinTeamButtons = joinTeamButtons;
+        this.cancelButton = cancelButton;
     }
 
     public void run() {
@@ -234,7 +238,7 @@ class LobbyUpdater implements Runnable{
                         if(actor.matches(username)){
                             Platform.runLater(
                                     () -> {
-
+                                        cancelButton.fire();
                                     }
                             );
                         } else {

@@ -54,12 +54,10 @@ public class Server implements Runnable {
             int port = 11345;
             gate = "tcp://" + ip + ":" + port + "?keep";
             URI = "tcp://" + ip + ":" + port + "/game?keep";
-            game.put("URI", URI);
-            System.out.println("A game is hosted on URI: " + URI);
+            game.put("IPPORT", ip + ":" + port);
+            System.out.println("A game is hosted on URI: " + ip + ":" + port);
             // Opening gate at given URI
-            gameRepository.addGate(URI);
             gameRepository.add("game", game);
-
             gameRepository.addGate(gate);
 
             //Look for players connecting

@@ -33,10 +33,9 @@ public class SetupGameController {
         serverThread.setDaemon(true); //Thread should close when main thread closes
         serverThread.start();
 
+        String ip = (String) space.get(new ActualField("IPPORT"), new FormalField(String.class))[1];
 
-
-        String URI = (String) space.get(new ActualField("URI"), new FormalField(String.class))[1];
-        lobbyModel.setURI(URI);
+        lobbyModel.setIp(ip);
         lobbyModel.setUsername(username);
 
         mainMenuController.getSetupGameStage().close();

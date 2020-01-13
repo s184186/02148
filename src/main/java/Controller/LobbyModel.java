@@ -6,7 +6,7 @@ public class LobbyModel {
     private int version;
     private int numberOfTeams;
     private String host;
-    private String URI;
+    private String ip;
 
     public void setUsername(String username) {
         this.username = username;
@@ -40,11 +40,11 @@ public class LobbyModel {
         this.host = host;
     }
 
-    public String getURI() {
-        return URI;
+    public String getIp() {
+        return ip;
     }
 
-    public void setURI(String URI) {
-        this.URI = URI;
+    public void setIp(String ip) {
+        this.ip = ip;
     }
 }

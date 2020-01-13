@@ -5,10 +5,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import org.jspace.ActualField;
-import org.jspace.FormalField;
-import org.jspace.RemoteSpace;
-import org.jspace.Space;
+
 import java.io.IOException;
 
 public class ConnectToGameController {
@@ -22,7 +19,7 @@ public class ConnectToGameController {
     public void handlePlay() throws IOException, InterruptedException {
         String username = usernameField.getText();
 
-        lobbyModel.setURI(URIField.getText());
+        lobbyModel.setIp(URIField.getText());
         lobbyModel.setUsername(username);
 
         mainMenuController.getSetupGameStage().close();

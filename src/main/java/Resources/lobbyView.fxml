@@ -14,29 +14,33 @@
       <children>
         <Pane prefHeight="81.0" prefWidth="234.0">
           <children>
-            <VBox id="VBox" alignment="CENTER" layoutX="5.0" layoutY="0.0" prefHeight="81.0" prefWidth="43.0" spacing="5.0">
+            <VBox id="VBox" alignment="CENTER_RIGHT" layoutX="5.0" layoutY="0.0" prefHeight="81.0" prefWidth="43.0" spacing="5.0">
               <children>
                 <Label text="Host:" />
-                <Label text="URI:" />
+                <Label text="ip:" />
               </children>
             </VBox>
-            <VBox id="VBox" alignment="CENTER_LEFT" layoutX="42.0" layoutY="0.0" prefHeight="81.0" prefWidth="166.0" spacing="5.0">
+            <VBox id="VBox" alignment="CENTER_LEFT" layoutX="47.0" layoutY="0.0" prefHeight="81.0" prefWidth="161.0" spacing="5.0">
               <children>
-                <Label fx:id="hostNameField" prefWidth="166.0" text="" />
-                <Label fx:id="URIField" prefWidth="166.0" text="" />
+                <Label fx:id="hostNameField" prefWidth="166.0" text="">
+                  <VBox.margin>
+                    <Insets left="5.0" fx:id="x2" />
+                  </VBox.margin>
+                </Label>
+                <Label fx:id="URIField" prefWidth="166.0" text="" VBox.margin="$x2" />
               </children>
             </VBox>
           </children>
         </Pane>
         <Pane prefHeight="81.0" prefWidth="216.0">
           <children>
-            <VBox id="VBox" alignment="CENTER" layoutX="0.0" layoutY="0.0" prefHeight="81.0" prefWidth="57.0" spacing="5.0">
+            <VBox id="VBox" alignment="CENTER_RIGHT" layoutX="0.0" layoutY="-2.0" prefHeight="83.0" prefWidth="57.0" spacing="5.0">
               <children>
                 <Label text="Version:" />
                 <Label text="Teams:" />
               </children>
             </VBox>
-            <VBox id="VBox" alignment="CENTER_LEFT" layoutX="62.0" layoutY="-2.0" prefHeight="81.0" prefWidth="180.0" spacing="5.0">
+            <VBox id="VBox" alignment="CENTER_LEFT" layoutX="62.0" layoutY="-1.0" prefHeight="80.99990000000253" prefWidth="150.0" spacing="5.0">
               <children>
                 <Label fx:id="versionField" prefWidth="150.0" text="" />
                 <Label fx:id="numberOfTeamsField" prefWidth="150.0" text="" />
@@ -137,7 +141,7 @@
         <Insets bottom="20.0" top="5.0" />
       </padding>
       <Button fx:id="playButton" mnemonicParsing="false" onAction="#handlePlay" prefWidth="62.5" text="Play" />
-      <Button mnemonicParsing="false" onAction="#handleCancel" text="Disconnect" />
+      <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" text="Disconnect" />
     </HBox>
   </children>
 </VBox>
