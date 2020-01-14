@@ -41,6 +41,7 @@ public class MainMenuController {
 
         setupGameStage.setScene(lobbyScene);
         setupGameStage.setResizable(false);
+        mainMenuView.getMainMenuStage().close();
         setupGameStage.show();
     }
 
@@ -57,20 +58,21 @@ public class MainMenuController {
 
         setupGameStage.setScene(lobbyScene);
         setupGameStage.setResizable(false);
+        mainMenuView.getMainMenuStage().close();
         setupGameStage.show();
     }
 
     public void handleExit() {
         mainMenuView.getMainMenuStage().close();
         //Need to exit since there is a possibility of dangling threads
-        System.exit(-1);
+        //System.exit(-1);
     }
 
-    public void setMainMenuView(MainMenuView mainMenuView) {
+    void setMainMenuView(MainMenuView mainMenuView) {
         this.mainMenuView = mainMenuView;
     }
 
-    public Stage getSetupGameStage() {
+    Stage getSetupGameStage() {
         return setupGameStage;
     }
 }

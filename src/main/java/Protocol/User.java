@@ -11,7 +11,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import static Protocol.Templates.*;
+import static Controller.Templates.*;
 
 public class User {
 

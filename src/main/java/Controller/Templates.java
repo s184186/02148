@@ -1,4 +1,4 @@
-package Protocol;
+package Controller;
 
 import org.jspace.ActualField;
 import org.jspace.FormalField;
@@ -6,19 +6,15 @@ import org.jspace.Template;
 import org.jspace.TemplateField;
 
 public final class Templates {
-    public static final TemplateField[] connectToGameReq = new Template(new ActualField("connectToGameReq"), new FormalField(String.class)).getFields();
+    public static final TemplateField[] lobbyRequest = new Template(new ActualField("lobbyRequest"), new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class)).getFields();
+
     public static final TemplateField[] numberOfPlayers = new Template(new ActualField("numberOfPlayers"), new FormalField(Integer.class)).getFields();
     public static final TemplateField[] maxNumberOfPlayers = new Template(new ActualField("maxNumberOfPlayers"), new FormalField(Integer.class)).getFields();
     public static final TemplateField[] connectedUser = new Template(new ActualField("connectedUserSpecific"), new FormalField(String.class), new FormalField(Integer.class)).getFields();
-    public static final TemplateField[] teamReq = new Template(new ActualField("teamReq"), new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class)).getFields();
     public static final TemplateField[] IPPort = new Template(new ActualField("IPPort"), new FormalField(String.class)).getFields();
 
     public static final TemplateField[] teamPlayers(int team){
         return new Template(new ActualField("teamPlayers"), new ActualField(team), new FormalField(Integer.class)).getFields();
-    }
-
-    public static final TemplateField[] pingACK(String sender){
-        return new Template(new ActualField("pingack"), new ActualField(sender)).getFields();
     }
 
     public static final TemplateField[] lobbyUpdateDisconnected(String sender, String receiver){

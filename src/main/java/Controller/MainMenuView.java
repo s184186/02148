@@ -34,7 +34,7 @@ public class MainMenuView extends Application {
         mainMenuStage.show();
     }
 
-    public Stage getMainMenuStage() {
+    Stage getMainMenuStage() {
         return mainMenuStage;
     }
 }

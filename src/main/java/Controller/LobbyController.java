@@ -4,18 +4,17 @@ import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
-import org.jspace.ActualField;
-import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
 
-import static Protocol.Templates.*;
+import static Controller.Templates.*;
 
 public class LobbyController {
 
 
+    private static LobbyUpdater lobbyUpdater;
     public Label URIField;
     public Label team1Player1Field, team1Player2Field, team1Player3Field;
     public Label team2Player1Field, team2Player2Field, team2Player3Field;
@@ -32,31 +31,38 @@ public class LobbyController {
     private SetupGameController setupGameController;
     private ConnectToGameController connectToGameController;
     private LobbyModel lobbyModel;
-    private int numberOfTeams = 2, version = 0;
-    private String host, username, ip, URI;
-    private Thread serverThread, lobbyUpdaterThread;
+    private String username;
+    private Thread lobbyUpdaterThread;
     private RemoteSpace game;
-    private Stage lobbyStage;
+    private static Stage lobbyStage;
+    private Thread serverThread;
 
-    public static Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons,
-                                     Button cancelButton) throws InterruptedException {
+    private static Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons,
+                                      Button cancelButton) throws InterruptedException {
         String infoUsers, infoTeams;
-        game.put("connectToGameReq", username);
+        game.put("lobbyRequest", "connect", username, 0);
 
         Object[] ack = game.get(connectToGameAck(username));
 
         if (((String) ack[2]).matches("ok")) {
+
             //Get lobbyinfo
             infoUsers = (String) game.get(lobbyInfoUsers(username))[2];
             infoTeams = (String) game.get(lobbyInfoTeams(username))[2];
             String[] namesinfo = infoUsers.split(" ");
             String[] teamsinfo = infoTeams.split(" ");
+
             for (int i = 0; i < namesinfo.length; i++) {
+
                 playerFields[i].setText(namesinfo[i]);
                 int teamN = Integer.valueOf(teamsinfo[i]);
+
                 if (teamN != 0) {
+
                     Label[] team = teams[teamN - 1];
+
                     for (Label field : team) {
+
                         if (field.getText().matches("")) {
                             field.setText(namesinfo[i]);
                             break;
@@ -71,7 +77,8 @@ public class LobbyController {
 
         int numberOfTeams = (Integer) game.query(lobbyInfoNTeams(username))[2];
 
-        LobbyUpdater lobbyUpdater = new LobbyUpdater(game, username, playerFields, teams, joinTeamButtons, cancelButton, numberOfTeams);
+
+        lobbyUpdater = new LobbyUpdater(game, username, playerFields, teams, joinTeamButtons, cancelButton, numberOfTeams, lobbyStage);
         Thread lobbyUpdaterThread = new Thread(lobbyUpdater);
         lobbyUpdaterThread.setDaemon(true);
         lobbyUpdaterThread.start();
@@ -90,31 +97,27 @@ public class LobbyController {
         playerFields = new Label[]{player1Field, player2Field, player3Field, player4Field, player5Field, player6Field};
     }
 
-    public boolean setFields() throws IOException, InterruptedException {
+    boolean setFields() throws IOException, InterruptedException {
         if (!isHost) {
             playButton.setDisable(true);
         }
 
         //Make sure lobby closes properly when user closes window
-        lobbyStage.setOnHiding(event -> handleCancel());
+        lobbyStage.setOnHiding(event -> shutdown());
 
-        ip = lobbyModel.getIp();
-        URI = "tcp://" + ip + "/game?keep";
+        String ip = lobbyModel.getIp();
+        String URI = "tcp://" + ip + "/game?keep";
         username = lobbyModel.getUsername();
 
         game = new RemoteSpace(URI);
         lobbyUpdaterThread = connectUser(username, game, playerFields, teams, joinTeamButtons, cancelButton);
         if (lobbyUpdaterThread == null) {
-            //Not calling game.close() leaves a dangling thread, but gate is blocked
-            //Might be related to this https://github.com/pSpaces/jSpace/issues/12
-            //TODO: Find out if this can be fixed
-            //game.close();
             return false;
         }
 
-        version = (Integer) game.get(lobbyInfoVersion(username))[2];
-        numberOfTeams = (Integer) game.get(lobbyInfoNTeams(username))[2];
-        host = (String) game.get(lobbyInfoHost(username))[2];
+        int version = (Integer) game.get(lobbyInfoVersion(username))[2];
+        int numberOfTeams = (Integer) game.get(lobbyInfoNTeams(username))[2];
+        String host = (String) game.get(lobbyInfoHost(username))[2];
 
         hostNameField.setText(host);
         String versionText = "Normal";
@@ -134,30 +137,35 @@ public class LobbyController {
     }
 
     public void handlePlay() throws InterruptedException {
-        //TODO: Make server get this tuple and send out game start to all connected users
-        game.put("startGame");
+        if (isHost) {
+            game.put("lobbyRequest", "startGame", username, 0);
+        }
     }
 
     public void handleCancel() {
-        if (setupGameController != null) {
-            try {
-                //TODO: Make server get this tuple and send out an update to all connected users
-                game.put("lobbyDisband");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            serverThread.interrupt();
-            setupGameController.getLobbyStage().close();
-            }
-        } else {
-            connectToGameController.getLobbyStage().close();
-        }
+        lobbyStage.close();
 
+        MainMenuView mainMenuView = new MainMenuView();
+        try{
+            mainMenuView.start(new Stage());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void shutdown(){
+        lobbyUpdater.stop();
         lobbyUpdaterThread.interrupt();
 
-        //JSpace prints the stacktrace of an IOException, nothing went wrong
+        if (setupGameController != null) {
+            try {
+                game.put("lobbyRequest","lobbyDisband", username, 0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
         try {
-            //Not sure why game.close() works here
-            //TODO: Find out why this works
             game.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -167,13 +175,13 @@ public class LobbyController {
     public void handleJoinTeam1() {
         if (joinTeam1Button.getText().matches("Leave")) {
             try {
-                game.put("teamReq", "leaveTeam", username, 1);
+                game.put("lobbyRequest", "leaveTeam", username, 1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                game.put("teamReq", "joinTeam", username, 1);
+                game.put("lobbyRequest", "joinTeam", username, 1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -183,13 +191,13 @@ public class LobbyController {
     public void handleJoinTeam2() {
         if (joinTeam2Button.getText().matches("Leave")) {
             try {
-                game.put("teamReq", "leaveTeam", username, 2);
+                game.put("lobbyRequest", "leaveTeam", username, 2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                game.put("teamReq", "joinTeam", username, 2);
+                game.put("lobbyRequest", "joinTeam", username, 2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -199,41 +207,41 @@ public class LobbyController {
     public void handleJoinTeam3() {
         if (joinTeam3Button.getText().matches("Leave")) {
             try {
-                game.put("teamReq", "leaveTeam", username, 3);
+                game.put("lobbyRequest", "leaveTeam", username, 3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                game.put("teamReq", "joinTeam", username, 3);
+                game.put("lobbyRequest", "joinTeam", username, 3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void setLobbyModel(LobbyModel lobbyModel) {
+    void setLobbyModel(LobbyModel lobbyModel) {
         this.lobbyModel = lobbyModel;
     }
 
-    public void setSetupGameController(SetupGameController setupGameController) {
+    void setSetupGameController(SetupGameController setupGameController) {
         this.setupGameController = setupGameController;
     }
 
-    public void setConnectToGameController(ConnectToGameController connectToGameController) {
+    void setConnectToGameController(ConnectToGameController connectToGameController) {
         this.connectToGameController = connectToGameController;
     }
 
-    public void setHost(boolean host) {
+    void setHost(boolean host) {
         isHost = host;
+    }
+
+    void setStage(Stage lobbyStage) {
+        this.lobbyStage = lobbyStage;
     }
 
     public void setServerThread(Thread serverThread) {
         this.serverThread = serverThread;
-    }
-
-    public void setStage(Stage lobbyStage) {
-        this.lobbyStage = lobbyStage;
     }
 }
 
@@ -245,11 +253,13 @@ class LobbyUpdater implements Runnable {
     private Button[] joinTeamButtons;
     private Button cancelButton;
     private int numberOfTeams;
+    private Stage lobbyStage;
     private Space space;
     private volatile boolean exit;
 
-    public LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams,
-                        Button[] joinTeamButtons, Button cancelButton, int numberOfTeams) {
+    LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams,
+                 Button[] joinTeamButtons, Button cancelButton, int numberOfTeams,
+                 Stage lobbyStage) {
         this.space = space;
         this.username = username;
         this.playerFields = playerFields;
@@ -257,6 +267,7 @@ class LobbyUpdater implements Runnable {
         this.joinTeamButtons = joinTeamButtons;
         this.cancelButton = cancelButton;
         this.numberOfTeams = numberOfTeams;
+        this.lobbyStage = lobbyStage;
     }
 
     public void run() {
@@ -266,15 +277,14 @@ class LobbyUpdater implements Runnable {
                 Object[] lobbyUpdate = space.get(lobbyUpdate(username));
                 String type = (String) lobbyUpdate[1];
                 String actor = (String) lobbyUpdate[2];
+
                 switch (type) {
                     case "disconnected":
                         //This user has lost connection
                         if (actor.matches(username)) {
                             Platform.runLater(
-                                    () -> {
-                                        cancelButton.fire();
-                                    }
-                            );
+                                    () -> { cancelButton.fire();
+                            });
                         } else {
 
                             //Another user has lost connection
@@ -305,11 +315,9 @@ class LobbyUpdater implements Runnable {
                             );
                         }
                         break;
-                    case "ping":
-                        //space.put("pingack", username);
+                    case "ping": //Don't need to do anything since server checks if the tuple has been gotten
                         break;
                     case "connected":
-                        System.out.println(actor + " connected to the lobby");
                         Platform.runLater(
                                 () -> {
                                     //Update labels
@@ -367,14 +375,23 @@ class LobbyUpdater implements Runnable {
                             }
                         }
                         break;
+
+                    case "gameStart":
+                        Platform.runLater(
+                                () -> {
+                                    lobbyStage.close();
+                                }
+                        );
+                        System.out.println("game has started");
+                        break;
                 }
             }
         } catch (InterruptedException e) {
-
+            e.printStackTrace();
         }
     }
 
-    public void stop() {
+    void stop() {
         exit = true;
     }
 }

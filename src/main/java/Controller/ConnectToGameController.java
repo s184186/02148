@@ -71,13 +71,19 @@ public class ConnectToGameController {
 
     public void handleCancel() {
         mainMenuController.getSetupGameStage().close();
+        MainMenuView mainMenuView = new MainMenuView();
+        try{
+            mainMenuView.start(new Stage());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void setMainMenuController(MainMenuController mainMenuController) {
+    void setMainMenuController(MainMenuController mainMenuController) {
         this.mainMenuController = mainMenuController;
     }
 
-    public Stage getLobbyStage() {
+    Stage getLobbyStage() {
         return lobbyStage;
     }
 }

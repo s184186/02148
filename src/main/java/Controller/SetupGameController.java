@@ -1,7 +1,6 @@
 package Controller;
 
 import javafx.beans.binding.BooleanBinding;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -10,26 +9,21 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import org.jspace.ActualField;
-import org.jspace.FormalField;
 import org.jspace.SequentialSpace;
 
 import java.io.IOException;
-import java.util.Scanner;
 
-import static Protocol.Templates.IPPort;
+import static Controller.Templates.IPPort;
 
 public class SetupGameController {
 
-    private static Scanner in = new Scanner(System.in);
     public Button playButton;
     public RadioButton toggle3;
     public RadioButton toggle2;
     public ToggleGroup versionToggleGroup, teamNumberToggleGroup;
     public TextField usernameField;
     private MainMenuController mainMenuController;
-    private LobbyModel lobbyModel = new LobbyModel();
+    private LobbyModel lobbyModel;
     private Stage lobbyStage;
 
     public void initialize() {
@@ -75,6 +69,7 @@ public class SetupGameController {
 
         String ip = (String) space.get(IPPort)[1];
 
+        lobbyModel = new LobbyModel();
         lobbyModel.setIp(ip);
         lobbyModel.setUsername(username);
 
@@ -87,9 +82,9 @@ public class SetupGameController {
 
         LobbyController lobbyController = loader.getController();
         lobbyController.setSetupGameController(this);
-        lobbyController.setServerThread(serverThread);
         lobbyController.setLobbyModel(lobbyModel);
         lobbyController.setHost(true);
+        lobbyController.setServerThread(serverThread);
         lobbyController.setStage(lobbyStage);
         lobbyController.setFields();
 
@@ -103,6 +98,12 @@ public class SetupGameController {
 
     public void handleCancel() {
         mainMenuController.getSetupGameStage().close();
+        MainMenuView mainMenuView = new MainMenuView();
+        try{
+            mainMenuView.start(new Stage());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void handleNormalToggle() {
@@ -111,11 +112,11 @@ public class SetupGameController {
         toggle3.setSelected(false);
     }
 
-    public void setMainMenuController(MainMenuController mainMenuController) {
+    void setMainMenuController(MainMenuController mainMenuController) {
         this.mainMenuController = mainMenuController;
     }
 
-    public Stage getLobbyStage() {
+    Stage getLobbyStage() {
         return lobbyStage;
     }
 }
