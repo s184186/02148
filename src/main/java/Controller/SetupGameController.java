@@ -1,6 +1,7 @@
 package Controller;
 
 import javafx.beans.binding.BooleanBinding;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -9,6 +10,7 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.SequentialSpace;
@@ -88,6 +90,7 @@ public class SetupGameController {
         lobbyController.setServerThread(serverThread);
         lobbyController.setLobbyModel(lobbyModel);
         lobbyController.setHost(true);
+        lobbyController.setStage(lobbyStage);
         lobbyController.setFields();
 
         Scene lobbyScene = new Scene(root);
@@ -95,6 +98,7 @@ public class SetupGameController {
         lobbyStage.setScene(lobbyScene);
         lobbyStage.setResizable(false);
         lobbyStage.show();
+
     }
 
     public void handleCancel() {

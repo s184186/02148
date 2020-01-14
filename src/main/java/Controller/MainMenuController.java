@@ -40,6 +40,7 @@ public class MainMenuController {
         Scene lobbyScene = new Scene(root);
 
         setupGameStage.setScene(lobbyScene);
+        setupGameStage.setResizable(false);
         setupGameStage.show();
     }
 
@@ -55,6 +56,7 @@ public class MainMenuController {
         Scene lobbyScene = new Scene(root);
 
         setupGameStage.setScene(lobbyScene);
+        setupGameStage.setResizable(false);
         setupGameStage.show();
     }
 

@@ -1,6 +1,5 @@
 package Controller;
 
-import Protocol.MainGame;
 import org.jspace.*;
 
 import java.net.InetAddress;
@@ -26,9 +25,9 @@ public class Server implements Runnable {
 
     public void run() {
         Thread playerConnectorThread = null, playersConnectedThread = null, teamDistributorThread = null;
-        PlayerConnector playerConnector = null;
-        PlayersConnected playersConnected = null;
-        TeamDistributor teamDistributor = null;
+        ConnectRequestReceiver connectRequestReceiver = null;
+        UserPinger userPinger = null;
+        TeamRequestReceiver teamRequestReceiver = null;
         SpaceRepository gameRepository = null;
         try {
             System.out.println("Starting server");
@@ -80,29 +79,29 @@ public class Server implements Runnable {
 
             //TODO: Find out if 3 threads are needed
             //Look for players connecting
-            playerConnector = new PlayerConnector(game, server, host, version, numberOfTeams);
-            playerConnectorThread = startThread(playerConnector);
+            connectRequestReceiver = new ConnectRequestReceiver(game, server, host, version, numberOfTeams);
+            playerConnectorThread = startThread(connectRequestReceiver);
 
             //Check players are still connected
-            playersConnected = new PlayersConnected(server, game);
-            playersConnectedThread = startThread(playersConnected);
+            userPinger = new UserPinger(server, game);
+            playersConnectedThread = startThread(userPinger);
 
             //Look for joinTeam requests
-            teamDistributor = new TeamDistributor(server, game, numberOfTeams, version);
-            teamDistributorThread = startThread(teamDistributor);
+            teamRequestReceiver = new TeamRequestReceiver(server, game, numberOfTeams, version);
+            teamDistributorThread = startThread(teamRequestReceiver);
 
             //Wait for host to start game
             game.query(new ActualField("startGame"));
 
             System.out.println("Server: host has started the game");
 
-            playerConnector.stop(); //Stop while loop
+            connectRequestReceiver.stop(); //Stop while loop
             playerConnectorThread.interrupt(); //Interrupt blocking calls
 
-            playersConnected.stop();
+            userPinger.stop();
             playersConnectedThread.interrupt();
 
-            teamDistributor.stop();
+            teamRequestReceiver.stop();
             teamDistributorThread.interrupt();
 
             //TODO: Make this do something
@@ -112,13 +111,13 @@ public class Server implements Runnable {
             gameRepository.closeGate(gate);
             gameRepository.shutDown();
 
-            playerConnector.stop(); //Stop while loop
+            connectRequestReceiver.stop(); //Stop while loop
             playerConnectorThread.interrupt(); //Interrupt blocking calls
 
-            playersConnected.stop();
+            userPinger.stop();
             playersConnectedThread.interrupt();
 
-            teamDistributor.stop();
+            teamRequestReceiver.stop();
             teamDistributorThread.interrupt();
         }
     }
@@ -144,7 +143,7 @@ public class Server implements Runnable {
     }
 }
 
-class PlayerConnector implements Runnable {
+class ConnectRequestReceiver implements Runnable {
 
     private final int version;
     private final int numberOfTeams;
@@ -152,7 +151,7 @@ class PlayerConnector implements Runnable {
     private volatile boolean exit;
     private String host;
 
-    public PlayerConnector(Space game, Space server, String host, int version, int numberOfTeams) {
+    public ConnectRequestReceiver(Space game, Space server, String host, int version, int numberOfTeams) {
         this.game = game;
         this.server = server;
         this.host = host;
@@ -225,13 +224,13 @@ class PlayerConnector implements Runnable {
     }
 }
 
-class PlayersConnected implements Runnable {
+class UserPinger implements Runnable {
 
     private Space server, game;
     private volatile boolean exit;
 
 
-    public PlayersConnected(Space server, Space game) {
+    public UserPinger(Space server, Space game) {
         this.server = server;
         this.game = game;
     }
@@ -242,16 +241,19 @@ class PlayersConnected implements Runnable {
                 //Ping all users
                 Object[][] regUsers = server.queryAll(connectedUser).toArray(new Object[0][]);
                 for (int i = 0; i < regUsers.length; i++) {
+
                     String username = (String) regUsers[i][1];
                     game.put("lobbyUpdate", "ping", "", username, 0);
                     Thread.sleep(300);
-                    Object[] ack = game.getp(pingACK(username));
+                    Object[] ack = game.getp(lobbyUpdatePing(username));
+
                     //If a user doesn't respond within 0.3 seconds they have been disconnected
-                    if (ack == null) {
+                    if (ack != null) {
                         //Inform all users of disconnected user
                         Object[][] users = server.queryAll(connectedUser).toArray(new Object[0][]);
+
                         for (Object[] user : users) {
-                            game.put("lobbyUpdate", "disconnected", user, user[1], 0);
+                            game.put("lobbyUpdate", "disconnected", username, user[1], 0);
                         }
 
                         //Update server information
@@ -274,14 +276,14 @@ class PlayersConnected implements Runnable {
     }
 }
 
-class TeamDistributor implements Runnable {
+class TeamRequestReceiver implements Runnable {
 
     private volatile boolean exit;
     private Space server, game;
     private int numberOfTeams;
     private int version;
 
-    public TeamDistributor(Space server, Space game, int numberOfTeams, int version) {
+    public TeamRequestReceiver(Space server, Space game, int numberOfTeams, int version) {
         this.server = server;
         this.game = game;
         this.numberOfTeams = numberOfTeams;

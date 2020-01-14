@@ -52,6 +52,7 @@ public class ConnectToGameController {
         LobbyController lobbyController = loader.getController();
         lobbyController.setConnectToGameController(this);
         lobbyController.setLobbyModel(lobbyModel);
+        lobbyController.setStage(lobbyStage);
         lobbyController.setHost(false);
 
         //Is connection refused?
@@ -61,6 +62,7 @@ public class ConnectToGameController {
             Scene lobbyScene = new Scene(root);
 
             lobbyStage.setScene(lobbyScene);
+            lobbyStage.setResizable(false);
             lobbyStage.show();
         } else {
             connectionFailedLabel.setText("Unable to connect. Either lobby is full or username is in use");

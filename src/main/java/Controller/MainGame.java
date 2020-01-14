@@ -1,4 +1,4 @@
-package Protocol;
+package Controller;
 
 import org.jspace.Space;
 

@@ -3,6 +3,7 @@ package Controller;
 import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.stage.Stage;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -35,6 +36,7 @@ public class LobbyController {
     private String host, username, ip, URI;
     private Thread serverThread, lobbyUpdaterThread;
     private RemoteSpace game;
+    private Stage lobbyStage;
 
     public static Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons,
                                      Button cancelButton) throws InterruptedException {
@@ -92,6 +94,10 @@ public class LobbyController {
         if (!isHost) {
             playButton.setDisable(true);
         }
+
+        //Make sure lobby closes properly when user closes window
+        lobbyStage.setOnHiding(event -> handleCancel());
+
         ip = lobbyModel.getIp();
         URI = "tcp://" + ip + "/game?keep";
         username = lobbyModel.getUsername();
@@ -127,13 +133,21 @@ public class LobbyController {
         return true;
     }
 
-    public void handlePlay() {
+    public void handlePlay() throws InterruptedException {
+        //TODO: Make server get this tuple and send out game start to all connected users
+        game.put("startGame");
     }
 
     public void handleCancel() {
         if (setupGameController != null) {
+            try {
+                //TODO: Make server get this tuple and send out an update to all connected users
+                game.put("lobbyDisband");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             serverThread.interrupt();
             setupGameController.getLobbyStage().close();
+            }
         } else {
             connectToGameController.getLobbyStage().close();
         }
@@ -143,6 +157,7 @@ public class LobbyController {
         //JSpace prints the stacktrace of an IOException, nothing went wrong
         try {
             //Not sure why game.close() works here
+            //TODO: Find out why this works
             game.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -216,6 +231,10 @@ public class LobbyController {
     public void setServerThread(Thread serverThread) {
         this.serverThread = serverThread;
     }
+
+    public void setStage(Stage lobbyStage) {
+        this.lobbyStage = lobbyStage;
+    }
 }
 
 class LobbyUpdater implements Runnable {
@@ -257,6 +276,7 @@ class LobbyUpdater implements Runnable {
                                     }
                             );
                         } else {
+
                             //Another user has lost connection
                             Platform.runLater(
                                     () -> {
@@ -286,7 +306,7 @@ class LobbyUpdater implements Runnable {
                         }
                         break;
                     case "ping":
-                        space.put("pingack", username);
+                        //space.put("pingack", username);
                         break;
                     case "connected":
                         System.out.println(actor + " connected to the lobby");

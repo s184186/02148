@@ -57,5 +57,7 @@ public final class Templates {
         return new Template(new ActualField("lobbyUpdate"), new FormalField(String.class), new FormalField(String.class), new ActualField(receiver), new FormalField(Integer.class)).getFields();
     }
 
-
+    public static final TemplateField[] lobbyUpdatePing(String receiver) {
+        return new Template(new ActualField("lobbyUpdate"), new ActualField("ping"), new FormalField(String.class), new ActualField(receiver), new FormalField(Integer.class)).getFields();
+    }
 }
