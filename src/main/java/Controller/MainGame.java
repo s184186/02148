@@ -1,4 +1,4 @@
-package Protocol;
+package Controller;
 
 import org.jspace.Space;
 
@@ -12,7 +12,7 @@ public class MainGame {
     private Space game;
     private String host;
 
-    public MainGame(String host, String[] players, int[] teams, int version, Space game){
+    public MainGame(String host, String[] players, int[] teams, int version, Space game) {
         this.players = players;
         this.teams = teams;
         this.version = version;
@@ -20,7 +20,7 @@ public class MainGame {
         this.host = host;
     }
 
-    public void startGame(){
+    public void startGame() {
         System.out.println("Players: " + Arrays.toString(players));
         System.out.println("Teams: " + Arrays.toString(teams));
     }

@@ -1,3 +1,4 @@
+/*
 package Protocol;
 
 import org.jspace.ActualField;
@@ -10,7 +11,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import static Protocol.Templates.*;
+import static Controller.Templates.*;
 
 public class User {
 
@@ -76,7 +77,7 @@ public class User {
             if(connect.matches("Y")){
 
                 game.put("connect", username, "yes");
-                info = (String) game.get(lobbyInfo(username).getFields())[2];
+                info = (String) game.get(lobbyInfoUsers(username).getFields())[2];
 
                 System.out.println("Connected users: " +info);
 
@@ -166,4 +167,5 @@ class LobbyUpdater implements Runnable{
         exit = true;
     }
 }
+*/
 
