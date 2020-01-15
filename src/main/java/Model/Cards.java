@@ -1,20 +1,25 @@
 package Model;
 
 public enum Cards {
-
-    Three("Tre", 3, "fw"),
-    Four("Fire", 4, "bw"),
-    Fem("Fem", 4, "fw"),
-    Seks("Seks", 4, "fw"),
-    Syv("Syv", 4, "sp"),
-    Ni("Ni", 4, "fw"),
-    Ti("Ti", 4, "fw"),
-    Twelve("Twelve", 4, "fw"),
-    Hjerte("Hjerte", 4, "unl"),
-    Byt("Byt", 4, "sw"),
-    OtteH("OtteH", 4, "ch"),
-    TretH("TretH", 4, "ch"),
-    EtFjor("EtFjor", 4, "fw");
+    ONE("One", 1, "fw"),
+    TWO("Two", 2, "fw"),
+    THREE("Three", 3, "fw"),
+    FOUR("Four", -4, "bw"),
+    FOURFW("Four", 4, "fw"),
+    FIVE("Five", 5, "fw"),
+    SIX("Six", 6, "fw"),
+    SEVEN("Seven", 7, "sp"),
+    EIGHT("Eight", 8, "fw"),
+    NINE("Nine", 9, "fw"),
+    TEN("Ten", 10, "fw"),
+    TWELVE("Twelve", 12, "fw"),
+    THIRT("Thirteen", 13, "fw"),
+    FOURT("Fourteen", 14, "fw"),
+    HEART("Heart", 0, "unl"),
+    SWITCH("Switch", 0, "sw"),
+    EIGHT_H("EightH", 0, "ch"),
+    THIRT_H("ThirteenH", 0, "ch"),
+    ONE_FOURT("OneFourteen", 0, "fw");
 
 
     private String name;
@@ -37,5 +42,12 @@ public enum Cards {
 
     public String getFunction() {
         return function;
+    }
+
+    public Cards getEnum(int moves){
+        for(Cards x : Cards.values()){
+            if (x.getMoves()==moves) return x;
+        }
+        return null;
     }
 }

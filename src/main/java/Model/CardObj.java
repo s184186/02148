@@ -5,9 +5,9 @@ public class CardObj {
     private int amount;
 
 
-    public CardObj(Cards card, int amount){
+    public CardObj(Cards card){
         this.card=card;
-        this.amount=amount;
+        this.amount=4;
     }
 
     public Cards getCard() {
