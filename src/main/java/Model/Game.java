@@ -22,7 +22,7 @@ public class Game implements Runnable {
     private int playerTurnIndex;
     private int decksize = 13;
     private int[] teams;
-    private int winningTeam;
+    private int winningTeam=-1;
     private int numberOfTeams;
     private ArrayList<Player> teamOne = new ArrayList<>();
     private ArrayList<Player> teamTwo = new ArrayList<>();
@@ -62,6 +62,7 @@ public class Game implements Runnable {
 
         try {
             //Users will be represented as string list and handed down from server.
+            setupBoard();
             shuffleCards(users);
             game.put("switch!"); //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
             for(int i=0; i<noOfPlayers;i++){
@@ -76,12 +77,14 @@ public class Game implements Runnable {
         }
         while (true) {
             try {
+                if(winningTeam!=-1) break;
                 Object[] potentialMove = game.query(move(playerTurn).getFields()); // A basic move will b e represented by position, the card used and username and extra field.
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+        System.out.println("Team " + winningTeam + " won");
     }
 
 
@@ -293,7 +296,7 @@ public class Game implements Runnable {
                     for (int i = 0; i < 4; i++) {
                         if (board[endPosition].getPieces()[i].equals(username))
                             continue; //If you are already on that field, find an available place for your piece on that field.
-                        if (board[endPosition].getPieces()[i] == null || isPlayerDone()) { //if there is room, insert piece there
+                        if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                             board[endPosition].getPieces()[i] = username; //update board
                             game.get(move(username).getFields());
                             nextTurn(); //Figuring out which user's turn it is
@@ -455,32 +458,42 @@ public class Game implements Runnable {
         if (numberOfTeams == 2) {
             for (Player x : teamOne) {
                 x.setHomePos(count * 15);
+                board[count * 15].setHomeField(x.getUsername());
+                board[count * 15].setEndField(x.getUsername());
                 count += 2;
             }
             count = 1;
             for (Player x : teamTwo) {
                 x.setHomePos(count * 15);
+                board[count * 15].setHomeField(x.getUsername());
+                board[count * 15].setEndField(x.getUsername());
                 count += 2;
             }
         } else {
             count = 0;
             for (Player x : teamOne) {
                 x.setHomePos(count * 15);
+                board[count * 15].setHomeField(x.getUsername());
+                board[count * 15].setEndField(x.getUsername());
                 count += 3;
             }
             count = 1;
             for (Player x : teamTwo) {
                 x.setHomePos(count * 15);
+                board[count * 15].setHomeField(x.getUsername());
+                board[count * 15].setEndField(x.getUsername());
                 count += 3;
             }
             count = 2;
             for (Player x : teamThree) {
                 x.setHomePos(count * 15);
+                board[count * 15].setHomeField(x.getUsername());
+                board[count * 15].setEndField(x.getUsername());
                 count += 3;
             }
         }
 
-        for (int i = 0; i < noOfPlayers; i++) {
+        for (int i = 0; i <2*version+4; i++) {
             board[noOfPlayers * 15 + i * 4].setProtect(true); //set all goal circles to be protected
             board[noOfPlayers + i * 4 + 1].setProtect(true);
             board[noOfPlayers * 15 + i * 4 + 2].setProtect(true);
