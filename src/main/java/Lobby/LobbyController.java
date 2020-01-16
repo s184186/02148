@@ -1,5 +1,6 @@
 package Lobby;
 
+import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -34,7 +35,7 @@ public class LobbyController {
 
     private Label[] playerFields;
     private Button[] joinTeamButtons;
-    private Label[][] teams;
+    private Label[][] teamLabels;
 
     private boolean isHost;
     private SetupGameController setupGameController;
@@ -43,7 +44,6 @@ public class LobbyController {
     private String username;
     private Thread lobbyUpdaterThread;
     private RemoteSpace game;
-    private Thread serverThread;
     private static Stage lobbyStage;
 
     public void initialize() {
@@ -53,7 +53,7 @@ public class LobbyController {
         Label[] team1 = new Label[]{team1Player1Field, team1Player2Field, team1Player3Field};
         Label[] team2 = new Label[]{team2Player1Field, team2Player2Field, team2Player3Field};
         Label[] team3 = new Label[]{team3Player1Field, team3Player2Field, team3Player3Field};
-        teams = new Label[][]{team1, team2, team3};
+        teamLabels = new Label[][]{team1, team2, team3};
 
         joinTeamButtons = new Button[]{joinTeam1Button, joinTeam2Button, joinTeam3Button};
 
@@ -61,13 +61,10 @@ public class LobbyController {
     }
 
     boolean setup() throws IOException, InterruptedException {
-        if(setupGameController != null) {
+        if(isHost) {
             lobbyStage = setupGameController.getLobbyStage();
         } else {
             lobbyStage = connectToGameController.getLobbyStage();
-        }
-
-        if (!isHost) {
             playButton.setDisable(true);
         }
 
@@ -78,16 +75,59 @@ public class LobbyController {
         String URI = "tcp://" + ip + "/game?keep";
         username = lobbyModel.getUsername();
 
+        int version;
+        int numberOfTeams;
+        String host;
+
+        //Connect to lobby
         game = new RemoteSpace(URI);
-        lobbyUpdaterThread = connectUser(username, game, playerFields, teams, joinTeamButtons, cancelButton);
-        if (lobbyUpdaterThread == null) {
+        Gson gson = new Gson();
+        game.put("lobbyRequest", "connect", username, 0, "");
+
+        Object[] ack = game.get(connectToGameAck(username));
+
+        if (((String) ack[2]).matches("ok")) {
+
+            //Get lobbyinfo
+            Object[] lobbyInfoJson = game.get(lobbyInfo(username));
+            String[] lobbyInfo = gson.fromJson((String) lobbyInfoJson[2], String[].class);
+
+            String[] users = gson.fromJson(lobbyInfo[0], String[].class);
+            int[] teams = gson.fromJson(lobbyInfo[1], int[].class);
+            version = gson.fromJson(lobbyInfo[2], int.class);
+            numberOfTeams = gson.fromJson(lobbyInfo[3], int.class);
+            host = gson.fromJson(lobbyInfo[4], String.class);
+
+            for (int i = 0; i < users.length; i++) {
+
+                playerFields[i].setText(users[i]);
+                int teamN = teams[i];
+
+                if (teamN != 0) {
+
+                    Label[] team = teamLabels[teamN - 1];
+
+                    for (Label field : team) {
+
+                        if (field.getText().matches("")) {
+                            field.setText(users[i]);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            lobbyUpdater = new LobbyUpdater(game, username, playerFields, teamLabels, joinTeamButtons, cancelButton, numberOfTeams,
+                    lobbyStage, chatBox);
+            lobbyUpdaterThread = new Thread(lobbyUpdater);
+            lobbyUpdaterThread.setDaemon(true);
+            lobbyUpdaterThread.start();
+
+        } else {
             return false;
         }
 
-        int version = (Integer) game.get(lobbyInfoVersion(username))[2];
-        int numberOfTeams = (Integer) game.get(lobbyInfoNTeams(username))[2];
-        String host = (String) game.get(lobbyInfoHost(username))[2];
-
+        //Set lobby text
         hostNameField.setText(host);
         String versionText = "Normal";
 
@@ -105,62 +145,11 @@ public class LobbyController {
         return true;
     }
 
-    private Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons,
-                                      Button cancelButton) throws InterruptedException {
-        String infoUsers, infoTeams;
-        game.put("lobbyRequest", "connect", username, 0, "");
-
-        Object[] ack = game.get(connectToGameAck(username));
-
-        if (((String) ack[2]).matches("ok")) {
-
-            //Get lobbyinfo
-            infoUsers = (String) game.get(lobbyInfoUsers(username))[2];
-            infoTeams = (String) game.get(lobbyInfoTeams(username))[2];
-            String[] namesinfo = infoUsers.split(" ");
-            String[] teamsinfo = infoTeams.split(" ");
-
-            for (int i = 0; i < namesinfo.length; i++) {
-
-                playerFields[i].setText(namesinfo[i]);
-                int teamN = Integer.valueOf(teamsinfo[i]);
-
-                if (teamN != 0) {
-
-                    Label[] team = teams[teamN - 1];
-
-                    for (Label field : team) {
-
-                        if (field.getText().matches("")) {
-                            field.setText(namesinfo[i]);
-                            break;
-                        }
-                    }
-                }
-            }
-
-        } else {
-            return null;
-        }
-
-        int numberOfTeams = (Integer) game.query(lobbyInfoNTeams(username))[2];
-
-
-        lobbyUpdater = new LobbyUpdater(game, username, playerFields, teams, joinTeamButtons, cancelButton, numberOfTeams,
-                                        lobbyStage, chatBox);
-        Thread lobbyUpdaterThread = new Thread(lobbyUpdater);
-        lobbyUpdaterThread.setDaemon(true);
-        lobbyUpdaterThread.start();
-
-        return lobbyUpdaterThread;
-    }
-
-
     public void shutdown(){
         lobbyUpdater.stop();
         lobbyUpdaterThread.interrupt();
 
-        if (setupGameController != null) {
+        if (isHost) {
             try {
                 game.put("lobbyRequest","lobbyDisband", username, 0, "");
             } catch (InterruptedException e) {
@@ -271,10 +260,6 @@ public class LobbyController {
 
     void setHost(boolean host) {
         isHost = host;
-    }
-
-    public void setServerThread(Thread serverThread) {
-        this.serverThread = serverThread;
     }
 }
 

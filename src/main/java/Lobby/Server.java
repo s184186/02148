@@ -1,5 +1,6 @@
 package Lobby;
 
+import com.google.gson.Gson;
 import org.jspace.*;
 
 import java.net.InetAddress;
@@ -147,12 +148,12 @@ class LobbyRequestReceiver implements Runnable {
                 String info = (String) req[4];
 
                 Object[] teamInfo;
-                Object[][] users;
+                Object[][] usersConnected;
 
                 switch (type){
                     case "sendMessage":
-                        users = server.queryAll(connectedUser).toArray(new Object[0][]);
-                        for (Object[] user : users) {
+                        usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+                        for (Object[] user : usersConnected) {
                             game.put("lobbyUpdate", "chatMessage", username, user[1], 0, info);
                         }
                         break;
@@ -166,8 +167,8 @@ class LobbyRequestReceiver implements Runnable {
                         game.put("leaveTeamAck", username, "ok");
 
                         //Inform users of team update
-                        users = server.queryAll(connectedUser).toArray(new Object[0][]);
-                        for (Object[] user : users) {
+                        usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+                        for (Object[] user : usersConnected) {
                             game.put("lobbyUpdate", "leftTeam", username, user[1], 0, "");
                         }
                         break;
@@ -190,8 +191,8 @@ class LobbyRequestReceiver implements Runnable {
                             game.put("joinTeamAck", username, "ok");
 
                             //Inform users of team update
-                            users = server.queryAll(connectedUser).toArray(new Object[0][]);
-                            for (Object[] user : users) {
+                            usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+                            for (Object[] user : usersConnected) {
                                 game.put("lobbyUpdate", "joinedTeam", username, user[1], team, "");
                             }
                         } else {
@@ -219,24 +220,26 @@ class LobbyRequestReceiver implements Runnable {
                             server.put("connectedUserSpecific", username, 0);
                             server.put("numberOfPlayers", n + 1);
 
-                            StringBuilder connectedUsers = new StringBuilder();
-                            StringBuilder userTeams = new StringBuilder();
-
                             //Inform connected users of newly connected user
-                            users = server.queryAll(connectedUser).toArray(new Object[0][]);
-                            for (Object[] user : users) {
-                                userTeams.append(user[2]).append(" ");
-                                connectedUsers.append(user[1]).append(" ");
-                                game.put("lobbyUpdate", "connected", username, user[1], 0, "");
+                            usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+                            String[] users = new String[usersConnected.length];
+                            int[] teams = new int[usersConnected.length];
+
+                            for (int i = 0; i < usersConnected.length; i++) {
+                                users[i] = (String) usersConnected[i][1];
+                                teams[i] = (Integer) usersConnected[i][2];
+                                game.put("lobbyUpdate", "connected", username, usersConnected[i][1], 0, "");
                             }
 
                             //Give newly connected user lobby information
-                            //TODO: Turn info into array to be serialized
-                            game.put("lobbyInfoUsers", username, connectedUsers.toString());
-                            game.put("lobbyInfoTeams", username, userTeams.toString());
-                            game.put("lobbyInfoVersion", username, version);
-                            game.put("lobbyInfoNTeams", username, numberOfTeams);
-                            game.put("lobbyInfoHost", username, host);
+                            Gson gson = new Gson();
+                            String usersJson = gson.toJson(users);
+                            String teamsJson = gson.toJson(teams);
+                            String[] userInfo = {usersJson, teamsJson, String.valueOf(version), String.valueOf(numberOfTeams), host};
+                            String userInfoJson = gson.toJson(userInfo);
+
+                            game.put("lobbyInfo", username, userInfoJson);
+
                         } else {
                             //Server is full
                             server.put("numberOfPlayers", n);
@@ -247,8 +250,8 @@ class LobbyRequestReceiver implements Runnable {
                         break;
 
                     case "lobbyDisband":
-                        users = server.queryAll(connectedUser).toArray(new Object[0][]);
-                        for (Object[] user : users) {
+                        usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+                        for (Object[] user : usersConnected) {
                             if(!((String)user[1]).matches(host)) {
                                 game.put("lobbyUpdate", "disconnected", user[1], user[1], 0, "");
                             }
@@ -258,8 +261,8 @@ class LobbyRequestReceiver implements Runnable {
                         break;
 
                     case "startGame":
-                        users = server.queryAll(connectedUser).toArray(new Object[0][]);
-                        for (Object[] user : users) {
+                        usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+                        for (Object[] user : usersConnected) {
                             game.put("lobbyUpdate", "gameStart", "", user[1], 0, "");
                         }
                         server.put("gameUpdate","startGame");

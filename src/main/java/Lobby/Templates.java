@@ -27,24 +27,8 @@ public final class Templates {
         return new Template(new ActualField("connectToGameAck"), new ActualField(s), new FormalField(String.class)).getFields();
     }
 
-    public static final TemplateField[] lobbyInfoHost(String s) {
-        return new Template(new ActualField("lobbyInfoHost"), new ActualField(s), new FormalField(String.class)).getFields();
-    }
-
-    public static final TemplateField[] lobbyInfoVersion(String s) {
-        return new Template(new ActualField("lobbyInfoVersion"), new ActualField(s), new FormalField(Integer.class)).getFields();
-    }
-
-    public static final TemplateField[] lobbyInfoUsers(String s) {
-        return new Template(new ActualField("lobbyInfoUsers"), new ActualField(s), new FormalField(String.class)).getFields();
-    }
-
-    public static final TemplateField[] lobbyInfoNTeams(String s) {
-        return new Template(new ActualField("lobbyInfoNTeams"), new ActualField(s), new FormalField(Integer.class)).getFields();
-    }
-
-    public static final TemplateField[] lobbyInfoTeams(String s) {
-        return new Template(new ActualField("lobbyInfoTeams"), new ActualField(s), new FormalField(String.class)).getFields();
+    public static final TemplateField[] lobbyInfo(String s) {
+        return new Template(new ActualField("lobbyInfo"), new ActualField(s), new FormalField(String.class)).getFields();
     }
 
     public static final TemplateField[] lobbyUpdate(String receiver) {
@@ -54,4 +38,5 @@ public final class Templates {
     public static final TemplateField[] lobbyUpdatePing(String receiver) {
         return new Template(new ActualField("lobbyUpdate"), new ActualField("ping"), new FormalField(String.class), new ActualField(receiver), new FormalField(Integer.class), new FormalField(String.class)).getFields();
     }
+
 }
