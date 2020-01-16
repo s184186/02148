@@ -12,5 +12,5 @@ public final class Templates {
     public static final Template lobbyInfo(String s){ return new Template(new ActualField("lobbyInfo"), new ActualField(s), new FormalField(String.class));}
     public static final Template lobbyUpdate(String s){ return new Template(new ActualField("lobbyUpdate"), new ActualField(s), new FormalField(String.class));}
     public static final Template connectedUser = new Template(new ActualField("connectedUser"), new FormalField(String.class));
-    public static final Template move = new Template(new FormalField(String.class), new FormalField(Integer.class), new FormalField(Integer.class), new FormalField(Cards.class));
+    public static final Template move (String s)  {return new Template(new FormalField(Integer.class), new FormalField(Cards.class), new ActualField(s), new FormalField(Integer.class));}
 }
