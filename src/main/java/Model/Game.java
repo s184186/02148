@@ -20,7 +20,7 @@ public class Game implements Runnable {
     private String playerTurn;
     private int playerTurnIndex;
     private int decksize = 13;
-    private ArrayList<CardObj> deck = new ArrayList<>() {
+    private ArrayList<CardObj> deck = new ArrayList<CardObj>() {
         {
             add(new CardObj(Cards.THREE));
             add(new CardObj(Cards.FOUR));

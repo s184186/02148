@@ -144,11 +144,19 @@ class LobbyRequestReceiver implements Runnable {
                 String type = (String) req[1];
                 String username = (String) req[2];
                 int team = (Integer) req[3];
+                String info = (String) req[4];
 
                 Object[] teamInfo;
                 Object[][] users;
 
                 switch (type){
+                    case "sendMessage":
+                        users = server.queryAll(connectedUser).toArray(new Object[0][]);
+                        for (Object[] user : users) {
+                            game.put("lobbyUpdate", "chatMessage", username, user[1], 0, info);
+                        }
+                        break;
+
                     case "leaveTeam":
                         //Leave team
                         teamInfo = server.get(teamPlayers(team));
@@ -160,7 +168,7 @@ class LobbyRequestReceiver implements Runnable {
                         //Inform users of team update
                         users = server.queryAll(connectedUser).toArray(new Object[0][]);
                         for (Object[] user : users) {
-                            game.put("lobbyUpdate", "leftTeam", username, user[1], 0);
+                            game.put("lobbyUpdate", "leftTeam", username, user[1], 0, "");
                         }
                         break;
 
@@ -184,7 +192,7 @@ class LobbyRequestReceiver implements Runnable {
                             //Inform users of team update
                             users = server.queryAll(connectedUser).toArray(new Object[0][]);
                             for (Object[] user : users) {
-                                game.put("lobbyUpdate", "joinedTeam", username, user[1], team);
+                                game.put("lobbyUpdate", "joinedTeam", username, user[1], team, "");
                             }
                         } else {
                             game.put("joinTeamAck", username, "ko");
@@ -219,7 +227,7 @@ class LobbyRequestReceiver implements Runnable {
                             for (Object[] user : users) {
                                 userTeams.append(user[2]).append(" ");
                                 connectedUsers.append(user[1]).append(" ");
-                                game.put("lobbyUpdate", "connected", username, user[1], 0);
+                                game.put("lobbyUpdate", "connected", username, user[1], 0, "");
                             }
 
                             //Give newly connected user lobby information
@@ -242,7 +250,7 @@ class LobbyRequestReceiver implements Runnable {
                         users = server.queryAll(connectedUser).toArray(new Object[0][]);
                         for (Object[] user : users) {
                             if(!((String)user[1]).matches(host)) {
-                                game.put("lobbyUpdate", "disconnected", user[1], user[1], 0);
+                                game.put("lobbyUpdate", "disconnected", user[1], user[1], 0, "");
                             }
                         }
                         server.put("gameUpdate","closeServer");
@@ -252,7 +260,7 @@ class LobbyRequestReceiver implements Runnable {
                     case "startGame":
                         users = server.queryAll(connectedUser).toArray(new Object[0][]);
                         for (Object[] user : users) {
-                            game.put("lobbyUpdate", "gameStart", "", user[1], 0);
+                            game.put("lobbyUpdate", "gameStart", "", user[1], 0, "");
                         }
                         server.put("gameUpdate","startGame");
                         exit = true;
@@ -315,7 +323,7 @@ class UserPinger implements Runnable {
                 for (Object[] regUser : regUsers) {
 
                     String username = (String) regUser[1];
-                    game.put("lobbyUpdate", "ping", "", username, 0);
+                    game.put("lobbyUpdate", "ping", "", username, 0, "");
                     Thread.sleep(300);
                     Object[] ack = game.getp(lobbyUpdatePing(username));
 
@@ -327,7 +335,7 @@ class UserPinger implements Runnable {
                         Object[][] users = server.queryAll(connectedUser).toArray(new Object[0][]);
 
                         for (Object[] user : users) {
-                            game.put("lobbyUpdate", "disconnected", username, user[1], 0);
+                            game.put("lobbyUpdate", "disconnected", username, user[1], 0, "");
                         }
 
                         //Update server information
