@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <VBox xmlns:fx="http://javafx.com/fxml/1" alignment="CENTER" style="-fx-background-color: rgb(170,204,102);"
-      xmlns="http://javafx.com/javafx/10.0.1" fx:controller="Controller.MainMenuController">
+      xmlns="http://javafx.com/javafx/10.0.1" fx:controller="Lobby.MainMenuController">
     <children>
         <Button fx:id="hostGame" mnemonicParsing="false" onAction="#handleHostGame" prefHeight="166.0" prefWidth="500.0"
                 style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);" text="Host game">

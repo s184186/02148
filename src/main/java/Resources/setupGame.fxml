@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <VBox xmlns:fx="http://javafx.com/fxml/1" id="usernameField" alignment="CENTER" xmlns="http://javafx.com/javafx/2.2"
-      fx:controller="Controller.SetupGameController">
+      fx:controller="Lobby.SetupGameController">
     <Label text="Choose your settings and press play to begin!"/>
     <HBox alignment="CENTER" prefHeight="50.0" prefWidth="350.0">
         <Label alignment="CENTER" text="Enter username:"/>

@@ -1,4 +1,4 @@
-package Controller;
+package Lobby;
 
 import org.jspace.*;
 
@@ -7,7 +7,7 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.Enumeration;
 
-import static Controller.Templates.*;
+import static Lobby.Templates.*;
 
 
 public class Server implements Runnable {
@@ -24,12 +24,12 @@ public class Server implements Runnable {
     }
 
     public void run() {
-        Thread lobbyRequestReceiverThread = null, playersConnectedThread = null;
-        LobbyRequestReceiver lobbyRequestReceiver = null;
+        Thread userPingerThread = null;
+        LobbyRequestReceiver lobbyRequestReceiver;
         UserPinger userPinger = null;
         SpaceRepository gameRepository = null;
 
-        SequentialSpace server = null;
+        SequentialSpace server;
         try {
             //Create game server
             gameRepository = new SpaceRepository();
@@ -46,8 +46,6 @@ public class Server implements Runnable {
                 maxNumberOfPlayers = 6;
                 server.put("teamPlayers", 3, 0);
             }
-
-            server.put("maxNumberOfPlayers", maxNumberOfPlayers);
 
             //Setting up URI
             //inetAddress = InetAddress.getLocalHost() will not always get the correct interface
@@ -74,12 +72,12 @@ public class Server implements Runnable {
             gameRepository.addGate(gate);
 
             //Look for players connecting
-            lobbyRequestReceiver = new LobbyRequestReceiver(game, server, host, version, numberOfTeams);
-            lobbyRequestReceiverThread = startThread(lobbyRequestReceiver);
+            lobbyRequestReceiver = new LobbyRequestReceiver(game, server, host, version, numberOfTeams, maxNumberOfPlayers);
+            startThread(lobbyRequestReceiver); //Don't need thread object since it closes automatically
 
             //Check players are still connected
             userPinger = new UserPinger(server, game);
-            playersConnectedThread = startThread(userPinger);
+            userPingerThread = startThread(userPinger);
 
             Object[] gameUpdate = server.get(new ActualField("gameUpdate"), new FormalField(String.class));
             if(((String) gameUpdate[1]).matches("startGame")){
@@ -88,9 +86,10 @@ public class Server implements Runnable {
 
         } catch (Exception e) {
             e.printStackTrace();
+
         } finally {
             userPinger.stop(); //Stop while loop
-            playersConnectedThread.interrupt(); //Interrupt blocking calls
+            userPingerThread.interrupt(); //Interrupt blocking calls
 
             gameRepository.closeGate(gate);
             gameRepository.shutDown();
@@ -113,7 +112,7 @@ public class Server implements Runnable {
             users[i] = (String) regUsers[i][1];
             teams[i] = (Integer) regUsers[i][2];
         }
-        MainGame mainGame = new MainGame(host, users, teams, version, game);
+        MainGame mainGame = new MainGame(host, users, teams, version, game, numberOfTeams);
         mainGame.startGame();
     }
 }
@@ -122,22 +121,22 @@ class LobbyRequestReceiver implements Runnable {
 
     private final int version;
     private final int numberOfTeams;
+    private int maxNumberOfPlayers;
     private Space game, server;
     private volatile boolean exit;
     private String host;
 
-    public LobbyRequestReceiver(Space game, Space server, String host, int version, int numberOfTeams) {
+    public LobbyRequestReceiver(Space game, Space server, String host, int version, int numberOfTeams, int maxNumberOfPlayers) {
         this.game = game;
         this.server = server;
         this.host = host;
         this.version = version;
         this.numberOfTeams = numberOfTeams;
+        this.maxNumberOfPlayers = maxNumberOfPlayers;
     }
 
     public void run() {
         try {
-            int maxPlayers = (Integer) server.query(maxNumberOfPlayers)[1];
-
             while (!exit) {
                 //Look for connection requests
                 Object[] req = game.get(lobbyRequest);
@@ -204,7 +203,7 @@ class LobbyRequestReceiver implements Runnable {
 
                         //Max number of players in lobby?
                         int n = (Integer) server.get(numberOfPlayers)[1];
-                        if (n != maxPlayers) {
+                        if (n != maxNumberOfPlayers) {
                             //Wait for user to connect
                             game.put("connectToGameAck", username, "ok");
 
@@ -224,6 +223,7 @@ class LobbyRequestReceiver implements Runnable {
                             }
 
                             //Give newly connected user lobby information
+                            //TODO: Turn info into array to be serialized
                             game.put("lobbyInfoUsers", username, connectedUsers.toString());
                             game.put("lobbyInfoTeams", username, userTeams.toString());
                             game.put("lobbyInfoVersion", username, version);
@@ -251,10 +251,11 @@ class LobbyRequestReceiver implements Runnable {
 
                     case "startGame":
                         users = server.queryAll(connectedUser).toArray(new Object[0][]);
-                        server.put("gameUpdate","startGame");
                         for (Object[] user : users) {
                             game.put("lobbyUpdate", "gameStart", "", user[1], 0);
                         }
+                        server.put("gameUpdate","startGame");
+                        exit = true;
                         break;
 
                 }
@@ -307,11 +308,13 @@ class UserPinger implements Runnable {
     public void run() {
         try {
             while (!exit) {
+
                 //Ping all users
                 Object[][] regUsers = server.queryAll(connectedUser).toArray(new Object[0][]);
-                for (int i = 0; i < regUsers.length; i++) {
 
-                    String username = (String) regUsers[i][1];
+                for (Object[] regUser : regUsers) {
+
+                    String username = (String) regUser[1];
                     game.put("lobbyUpdate", "ping", "", username, 0);
                     Thread.sleep(300);
                     Object[] ack = game.getp(lobbyUpdatePing(username));
@@ -319,7 +322,7 @@ class UserPinger implements Runnable {
                     //If a user doesn't respond within 0.3 seconds they have been disconnected
                     if (ack != null) {
                         int n = (Integer) server.get(numberOfPlayers)[1];
-                        server.put("numberOfPlayers", n-1);
+                        server.put("numberOfPlayers", n - 1);
                         //Inform all users of disconnected user
                         Object[][] users = server.queryAll(connectedUser).toArray(new Object[0][]);
 
@@ -328,12 +331,11 @@ class UserPinger implements Runnable {
                         }
 
                         //Update server information
-                        System.out.println("User: " + username + " disconnected from the lobby");
                         Object[] user = server.get(connectedUserSpecific(username));
                         int team = (Integer) user[2];
-                        if(team != 0){
+                        if (team != 0) {
                             Object[] teamInfo = server.get(teamPlayers(team));
-                            server.put("teamPlayers", user[2], (Integer) teamInfo[2] - 1);
+                            server.put("teamPlayers", team, (Integer) teamInfo[2] - 1);
                         }
                     }
                 }

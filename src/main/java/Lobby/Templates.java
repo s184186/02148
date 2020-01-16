@@ -1,4 +1,4 @@
-package Controller;
+package Lobby;
 
 import org.jspace.ActualField;
 import org.jspace.FormalField;
