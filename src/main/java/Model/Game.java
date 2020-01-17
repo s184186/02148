@@ -1,5 +1,6 @@
 package Model;
 
+import org.jspace.ActualField;
 import org.jspace.Space;
 
 import java.util.*;
@@ -15,35 +16,23 @@ public class Game implements Runnable {
     private int counter = 0;
     private int version;
     private String[] users;
-    private Boolean[] finished;
+    private boolean[] finished;
     private Space game;
     private BoardField[] board;
     private String playerTurn;
+    private int startingTeamsNumber;
     private int playerTurnIndex;
+    private int teamTurnIndex;
     private int decksize = 13;
     private int[] teams;
-    private int winningTeam=-1;
+    private int winningTeam = -1;
+    private boolean justStarted;
     private int numberOfTeams;
+    private int needCardsCounter;
     private ArrayList<Player> teamOne = new ArrayList<>();
     private ArrayList<Player> teamTwo = new ArrayList<>();
     private ArrayList<Player> teamThree = new ArrayList<>();
-    private ArrayList<CardObj> deck = new ArrayList<CardObj>() {
-        {
-            add(new CardObj(Cards.THREE));
-            add(new CardObj(Cards.FOUR));
-            add(new CardObj(Cards.FIVE));
-            add(new CardObj(Cards.SIX));
-            add(new CardObj(SEVEN));
-            add(new CardObj(Cards.NINE));
-            add(new CardObj(Cards.TEN));
-            add(new CardObj(Cards.TWELVE));
-            add(new CardObj(Cards.HEART));
-            add(new CardObj(Cards.SWITCH));
-            add(new CardObj(Cards.EIGHT_H));
-            add(new CardObj(Cards.THIRT_H));
-            add(new CardObj(Cards.ONE_FOURT));
-        }
-    };
+    private ArrayList<CardObj> deck;
 
 
     public Game(String host, String[] players, int[] teams, int version, Space game, int numberOfTeams) { //assumes that user array's elements are alternating in terms of teams.
@@ -53,33 +42,32 @@ public class Game implements Runnable {
         this.teams = teams;
         this.board = new BoardField[noOfPlayers * 15 + noOfPlayers * 4 + noOfPlayers];
         this.noOfPlayers = players.length;
-        this.version=version;
+        this.version = version;
+        this.finished = new boolean[noOfPlayers];
+        this.justStarted=true;
     }
 
     @Override
     public void run() {
-
-
         try {
             //Users will be represented as string list and handed down from server.
             setupBoard();
             shuffleCards(users);
             game.put("switch!"); //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
-            for(int i=0; i<noOfPlayers;i++){
-            Object[] switchInfo = game.get(switchReq.getFields());
-            switchCards(switchInfo);
+            for (int i = 0; i < noOfPlayers; i++) {
+                Object[] switchInfo = game.get(switchReq.getFields()); //switch req consits of from, to and card fields
+                switchCards(switchInfo);
             }
-
-            setupBoard();
             // Move will b e represented by position, the card used and username.
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         while (true) {
             try {
-                if(winningTeam!=-1) break;
+                if (winningTeam != -1) break;
                 Object[] potentialMove = game.query(move(playerTurn).getFields()); // A basic move will b e represented by position, the card used and username and extra field.
-
+                if(game.getp(new ActualField("need cards"))!=null) needCardsCounter++;
+                if(needCardsCounter==noOfPlayers) shuffleCards(users);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -87,25 +75,61 @@ public class Game implements Runnable {
         System.out.println("Team " + winningTeam + " won");
     }
 
+    private void setupDeck(){
+        deck= new ArrayList<CardObj>() {
+            {
+                add(new CardObj(Cards.THREE));
+                add(new CardObj(Cards.FOUR));
+                add(new CardObj(Cards.FIVE));
+                add(new CardObj(Cards.SIX));
+                add(new CardObj(SEVEN));
+                add(new CardObj(Cards.NINE));
+                add(new CardObj(Cards.TEN));
+                add(new CardObj(Cards.TWELVE));
+                add(new CardObj(Cards.HEART));
+                add(new CardObj(Cards.SWITCH));
+                add(new CardObj(Cards.EIGHT_H));
+                add(new CardObj(Cards.THIRT_H));
+                add(new CardObj(Cards.ONE_FOURT));
+            }
+        };
+    }
 
     private void shuffleCards(Object[] users) throws InterruptedException { //Cards are shuffled and handed out to users and the player to start is chosen
+        if (getCardsLeftInDeck()<noOfPlayers*4){ //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
+            setupDeck();
+        }
         Cards[] hand = new Cards[4];
         Random random = new Random();
         for (int i = 0; i < noOfPlayers; i++) {
             for (int j = 0; j < 4; j++) {
                 int index = random.nextInt(decksize);
-                hand[j] = deck.get(index).getCard();
                 int amount = deck.get(index).getAmount();
-                deck.get(index).setAmount(deck.get(index).getAmount() - 1);
+                deck.get(index).setAmount(amount - 1);
+                hand[j] = deck.get(index).getCard();
                 if (amount == 1) { //if last card of a specific type in deck, this type will be removed
                     deck.remove(index);
                     decksize--;
                 }
+
             }
-            game.put(users[i], hand);
+            game.put(users[i], hand); //Each user's hand is put in the tuple space. The users name is the id factor.
         }
-        playerTurnIndex = random.nextInt(noOfPlayers);
+        if(justStarted) {
+        playerTurnIndex = random.nextInt(noOfPlayers); //figuring out who has the first turn
+        teamTurnIndex = teams[playerTurnIndex];
+        startingTeamsNumber=teamTurnIndex;
         playerTurn = (String) users[playerTurnIndex];
+        justStarted=false;
+        }
+    }
+
+    private int getCardsLeftInDeck(){
+        int cardsleft=0;
+        for (CardObj x : deck) {
+            cardsleft+=x.getAmount();
+        }
+        return cardsleft;
     }
 
     private void switchCards(Object[] switchInfo) throws InterruptedException {
@@ -127,8 +151,10 @@ public class Game implements Runnable {
         switch (card) {
 
             case FOUR: //move backwards
-                if(!finished[playerTurnIndex] && board[position].getPieces()[0]!=username) return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
-                if(finished[playerTurnIndex] && (getTeam(board[position].getPieces()[0])!=getTeam(playerTurn))) return; //If you've finished and you're trying to move an opponents piece.
+                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username)
+                    return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn)))
+                    return; //If you've finished and you're trying to move an opponents piece.
 
                 if (board[position].isLocked() || position > 59 && position < noOfPlayers * 15 + noOfPlayers * 4)
                     return; //if piece is locked or in goal circle it can't be moved with a -4 card.
@@ -170,8 +196,10 @@ public class Game implements Runnable {
 
                 break;
             case SEVEN: //split
-                if(!finished[playerTurnIndex] && board[position].getPieces()[0]!=username) return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
-                if(finished[playerTurnIndex] && (getTeam(board[position].getPieces()[0])!=getTeam(playerTurn))) return; //If you've finished and you're trying to move an opponents piece.
+                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username)
+                    return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn)))
+                    return; //If you've finished and you're trying to move an opponents piece.
                 if (extra == 0 || extra > 7 - counter) return;
                 potentialMove[1] = card.getEnum(extra);
                 counter += extra;
@@ -184,8 +212,10 @@ public class Game implements Runnable {
                 }
                 return;
             case HEART: //release piece
-                if(!finished[playerTurnIndex] && board[position].getPieces()[0]!=username) return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
-                if(finished[playerTurnIndex] && (getTeam(board[position].getPieces()[0])!=getTeam(playerTurn))) return; //If you've finished and you're trying to move an opponents piece.
+                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username)
+                    return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn)))
+                    return; //If you've finished and you're trying to move an opponents piece.
 
                 for (int i = 0; i < noOfPlayers; i++) {
                     if (board[noOfPlayers * 15 + noOfPlayers * 4 + i].getPieces()[3 - i] != null && board[15 * (i)].getHomeField().matches(username)) { //If you use a card and you have pieces in homecircles left to use it on.
@@ -254,8 +284,10 @@ public class Game implements Runnable {
 
             //switch case to default
             default: //Default corresponds to all enums with the function fw/forward
-                    if(!finished[playerTurnIndex] && board[position].getPieces()[0]!=username) return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
-                    if(finished[playerTurnIndex] && (getTeam(board[position].getPieces()[0])!=getTeam(playerTurn))) return; //If you've finished and you're trying to move an opponents piece.
+                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username)
+                    return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn)))
+                    return; //If you've finished and you're trying to move an opponents piece.
                 if (board[position].isLocked() || finished[playerTurnIndex])
                     return; //if piece is locked, or you've finished, you can't move this piece.
                 if (position > 59 && position < (noOfPlayers * 15 + 4 * noOfPlayers) && isStuck(position, 15 * (position / 15))) { //if your piece is in it's goalcircles.
@@ -265,7 +297,10 @@ public class Game implements Runnable {
                     tryLock(endPosition);
                     board[endPosition].getPieces()[0] = username;
                     finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username); //check if player is finished
-                    if(isTeamDone(username)) {winningTeam = getTeamNumber(username); System.out.println("Team " + winningTeam +" won");}
+                    if (isTeamDone(username)) {
+                        winningTeam = getTeamNumber(username);
+                        System.out.println("Team " + winningTeam + " won");
+                    }
                     game.get(move(username).getFields());
                     nextTurn();
                 } else if (position % 15 > endPosition % 15) { //if this is the case, you've crossed a homefield
@@ -274,7 +309,10 @@ public class Game implements Runnable {
                     if (board[homefieldPos].getHomeField().matches(username)) { // if it's your homefield.
                         goalSquaresUpper(homefieldPos, position, endPosition, username);
                         finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username);
-                        if(isTeamDone(username)){ winningTeam = getTeamNumber(username);  System.out.println("Team " + winningTeam +" won");}
+                        if (isTeamDone(username)) {
+                            winningTeam = getTeamNumber(username);
+                            System.out.println("Team " + winningTeam + " won");
+                        }
                         game.get(move(username).getFields()); //remove card from space/card was valid and has been used
                         nextTurn();
                         return;
@@ -396,44 +434,46 @@ public class Game implements Runnable {
     }
 
     private void nextTurn() {
-        playerTurnIndex = ++playerTurnIndex % noOfPlayers;
-        playerTurn = users[playerTurnIndex];
+        teamTurnIndex = ++teamTurnIndex % (numberOfTeams+1); //there is no 0'th team.
+        if(teamTurnIndex==0) teamTurnIndex=1; //there is no 0'th team.
+        if(teamTurnIndex==startingTeamsNumber) playerTurnIndex= ++playerTurnIndex%getTeamByNumber(teamTurnIndex).size();
+        playerTurn = getTeamByNumber(teamTurnIndex).get(playerTurnIndex).getUsername();
     }
 
     private boolean isPlayerDone(String username) {
         int pieces = 0;
         int index = getPlayerIndex(username);
-        ArrayList<Player> team =getTeam(username);
+        ArrayList<Player> team = getTeamByUsername(username);
         int homepos = team.get(index).getHomePos();
         int goalPos = getGoalPos(homepos);
         for (int i = 0; i < 4; i++) {
-            if (board[goalPos+i] != null) pieces++;
+            if (board[goalPos + i] != null) pieces++;
         }
         return pieces == 4;
     }
 
     private boolean isTeamDone(String username) {
-        int count=0;
-        int size=0;
+        int count = 0;
+        int size = 0;
         if (getTeamNumber(username) == 1) {
-            size=teamOne.size();
-            for (Player x : teamOne){
-               if(x.isDone()) count++;
+            size = teamOne.size();
+            for (Player x : teamOne) {
+                if (x.isDone()) count++;
             }
         }
         if (getTeamNumber(username) == 2) {
-            size=teamTwo.size();
-            for (Player x : teamTwo){
-                if(x.isDone()) count++;
+            size = teamTwo.size();
+            for (Player x : teamTwo) {
+                if (x.isDone()) count++;
             }
         }
         if (getTeamNumber(username) == 3) {
-            size=teamThree.size();
-            for (Player x : teamThree){
-                if(x.isDone()) count++;
+            size = teamThree.size();
+            for (Player x : teamThree) {
+                if (x.isDone()) count++;
             }
         }
-        return count==size;
+        return count == size;
     }
 
     private void tryLock(int endPosition) {
@@ -454,55 +494,57 @@ public class Game implements Runnable {
             }
         }
         int count = 0;
-        //setup homePos of each team.
+        //Sets each player's starting points and ending points.
         if (numberOfTeams == 2) {
             for (Player x : teamOne) {
-                x.setHomePos(count * 15);
-                board[count * 15].setHomeField(x.getUsername());
-                board[count * 15].setEndField(x.getUsername());
+                setStartAndEndFields(count, x);
                 count += 2;
             }
             count = 1;
             for (Player x : teamTwo) {
-                x.setHomePos(count * 15);
-                board[count * 15].setHomeField(x.getUsername());
-                board[count * 15].setEndField(x.getUsername());
+                setStartAndEndFields(count, x);
                 count += 2;
             }
         } else {
             count = 0;
             for (Player x : teamOne) {
-                x.setHomePos(count * 15);
-                board[count * 15].setHomeField(x.getUsername());
-                board[count * 15].setEndField(x.getUsername());
+                setStartAndEndFields(count, x);
                 count += 3;
             }
             count = 1;
             for (Player x : teamTwo) {
-                x.setHomePos(count * 15);
-                board[count * 15].setHomeField(x.getUsername());
-                board[count * 15].setEndField(x.getUsername());
+                setStartAndEndFields(count, x);
                 count += 3;
             }
             count = 2;
             for (Player x : teamThree) {
-                x.setHomePos(count * 15);
-                board[count * 15].setHomeField(x.getUsername());
-                board[count * 15].setEndField(x.getUsername());
+                setStartAndEndFields(count, x);
                 count += 3;
             }
         }
-
-        for (int i = 0; i <2*version+4; i++) {
-            board[noOfPlayers * 15 + i * 4].setProtect(true); //set all goal circles to be protected
-            board[noOfPlayers + i * 4 + 1].setProtect(true);
-            board[noOfPlayers * 15 + i * 4 + 2].setProtect(true);
-            board[noOfPlayers * 15 + i * 4 + 3].setProtect(true);
-
-            board[15 * i].setProtect(true); //all home fields are protected
-            board[noOfPlayers * 15 + noOfPlayers * 4 + i].setProtect(true); //all homefields are protected
-            board[noOfPlayers * 15 + noOfPlayers * 4 + i].setPieces(new String[]{users[i], users[i], users[i], users[i]}); //Place alle pieces in their homefields.
+        for (int i = 0; i < noOfPlayers; i++) {
+            setProtectedFields(i);
+            String username=board[i * 15].getHomeField();
+            board[noOfPlayers * 15 + noOfPlayers * 4 + i].setPieces(new String[]{username, username, username, username}); //Place alle pieces in their homefields.
         }
+    }
+
+    private void setStartAndEndFields(int pos, Player user) { //Sets each players goalcircles/end fields and homefields/home positions.
+        user.setHomePos(pos * 15);
+        board[pos * 15].setHomeField(user.getUsername());
+        board[noOfPlayers * 15 + pos*4].setEndField(user.getUsername());
+        board[noOfPlayers * 15 + pos*4+1].setEndField(user.getUsername());
+        board[noOfPlayers * 15 + pos*4+2].setEndField(user.getUsername());
+        board[noOfPlayers * 15 + pos*4+3].setEndField(user.getUsername());
+    }
+
+    private void setProtectedFields(int count) {
+        board[noOfPlayers * 15 + count * 4].setProtect(true); //set all goal circles to be protected
+        board[noOfPlayers + count * 4 + 1].setProtect(true);
+        board[noOfPlayers * 15 + count * 4 + 2].setProtect(true);
+        board[noOfPlayers * 15 + count * 4 + 3].setProtect(true);
+        board[15 * count].setProtect(true); //all home fields are protected
+        board[noOfPlayers * 15 + noOfPlayers * 4 + count].setProtect(true); //all home circles are protected
     }
 
     private int getTeamNumber(String username) {
@@ -514,25 +556,34 @@ public class Game implements Runnable {
         }
         return teams[index];
     }
-    private ArrayList<Player> getTeam(String username){
+
+    private ArrayList<Player> getTeamByNumber(int teamNumber){
+        if(teamNumber==1) return teamOne;
+        if(teamNumber==2) return teamTwo;
+        if(teamNumber==3) return teamThree;
+        return null;
+    }
+
+    private ArrayList<Player> getTeamByUsername(String username) {
         int teamNo = getTeamNumber(username);
-        if(teamNo==1) return teamOne;
-        if(teamNo==2) return teamTwo;
-        if(teamNo==3) return teamThree;
+        if (teamNo == 1) return teamOne;
+        if (teamNo == 2) return teamTwo;
+        if (teamNo == 3) return teamThree;
 
         return null;
     }
-    private int getPlayerIndex(String username){
-        ArrayList<Player> tmp= getTeam(username);
-        for(int i=0; i<tmp.size(); i++){
-            if(tmp.get(i).getUsername()==username) return i;
+
+    private int getPlayerIndex(String username) {
+        ArrayList<Player> tmp = getTeamByUsername(username);
+        for (int i = 0; i < tmp.size(); i++) {
+            if (tmp.get(i).getUsername() == username) return i;
         }
         return -1;
     }
 
-    private int getGoalPos(int homePos){
-        if(version==0) return 60+homePos/15*4;
-        if(version==1) return 90+homePos/15*4;
-    return -1;
+    private int getGoalPos(int homePos) {
+        if (version == 0) return 60 + homePos / 15 * 4;
+        if (version == 1) return 90 + homePos / 15 * 4;
+        return -1;
     }
 }
