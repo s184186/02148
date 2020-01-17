@@ -1,15 +1,22 @@
-package Controller;
+package Lobby;
 
+import com.google.gson.Gson;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.jspace.RemoteSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
 
-import static Controller.Templates.*;
+import static Lobby.Templates.*;
 
 public class LobbyController {
 
@@ -22,10 +29,13 @@ public class LobbyController {
     public Label hostNameField, versionField, numberOfTeamsField;
     public Label player1Field, player2Field, player3Field, player4Field, player5Field, player6Field;
     public Button joinTeam1Button, joinTeam2Button, joinTeam3Button, playButton, cancelButton;
+    public TextField textField;
+    public VBox chatBox;
+    public ScrollPane sp;
 
     private Label[] playerFields;
     private Button[] joinTeamButtons;
-    private Label[][] teams;
+    private Label[][] teamLabels;
 
     private boolean isHost;
     private SetupGameController setupGameController;
@@ -35,70 +45,26 @@ public class LobbyController {
     private Thread lobbyUpdaterThread;
     private RemoteSpace game;
     private static Stage lobbyStage;
-    private Thread serverThread;
-
-    private static Thread connectUser(String username, Space game, Label[] playerFields, Label[][] teams, Button[] joinTeamButtons,
-                                      Button cancelButton) throws InterruptedException {
-        String infoUsers, infoTeams;
-        game.put("lobbyRequest", "connect", username, 0);
-
-        Object[] ack = game.get(connectToGameAck(username));
-
-        if (((String) ack[2]).matches("ok")) {
-
-            //Get lobbyinfo
-            infoUsers = (String) game.get(lobbyInfoUsers(username))[2];
-            infoTeams = (String) game.get(lobbyInfoTeams(username))[2];
-            String[] namesinfo = infoUsers.split(" ");
-            String[] teamsinfo = infoTeams.split(" ");
-
-            for (int i = 0; i < namesinfo.length; i++) {
-
-                playerFields[i].setText(namesinfo[i]);
-                int teamN = Integer.valueOf(teamsinfo[i]);
-
-                if (teamN != 0) {
-
-                    Label[] team = teams[teamN - 1];
-
-                    for (Label field : team) {
-
-                        if (field.getText().matches("")) {
-                            field.setText(namesinfo[i]);
-                            break;
-                        }
-                    }
-                }
-            }
-
-        } else {
-            return null;
-        }
-
-        int numberOfTeams = (Integer) game.query(lobbyInfoNTeams(username))[2];
-
-
-        lobbyUpdater = new LobbyUpdater(game, username, playerFields, teams, joinTeamButtons, cancelButton, numberOfTeams, lobbyStage);
-        Thread lobbyUpdaterThread = new Thread(lobbyUpdater);
-        lobbyUpdaterThread.setDaemon(true);
-        lobbyUpdaterThread.start();
-
-        return lobbyUpdaterThread;
-    }
 
     public void initialize() {
+        sp.setContent(chatBox);
+        sp.vvalueProperty().bind(chatBox.heightProperty());
+
         Label[] team1 = new Label[]{team1Player1Field, team1Player2Field, team1Player3Field};
         Label[] team2 = new Label[]{team2Player1Field, team2Player2Field, team2Player3Field};
         Label[] team3 = new Label[]{team3Player1Field, team3Player2Field, team3Player3Field};
-        teams = new Label[][]{team1, team2, team3};
+        teamLabels = new Label[][]{team1, team2, team3};
 
         joinTeamButtons = new Button[]{joinTeam1Button, joinTeam2Button, joinTeam3Button};
 
         playerFields = new Label[]{player1Field, player2Field, player3Field, player4Field, player5Field, player6Field};
     }
 
-    boolean setFields() throws IOException, InterruptedException {
-        if (!isHost) {
+    boolean setup() throws IOException, InterruptedException {
+        if(isHost) {
+            lobbyStage = setupGameController.getLobbyStage();
+        } else {
+            lobbyStage = connectToGameController.getLobbyStage();
             playButton.setDisable(true);
         }
 
@@ -109,16 +75,59 @@ public class LobbyController {
         String URI = "tcp://" + ip + "/game?keep";
         username = lobbyModel.getUsername();
 
+        int version;
+        int numberOfTeams;
+        String host;
+
+        //Connect to lobby
         game = new RemoteSpace(URI);
-        lobbyUpdaterThread = connectUser(username, game, playerFields, teams, joinTeamButtons, cancelButton);
-        if (lobbyUpdaterThread == null) {
+        Gson gson = new Gson();
+        game.put("lobbyRequest", "connect", username, 0, "");
+
+        Object[] ack = game.get(connectToGameAck(username));
+
+        if (((String) ack[2]).matches("ok")) {
+
+            //Get lobbyinfo
+            Object[] lobbyInfoJson = game.get(lobbyInfo(username));
+            String[] lobbyInfo = gson.fromJson((String) lobbyInfoJson[2], String[].class);
+
+            String[] users = gson.fromJson(lobbyInfo[0], String[].class);
+            int[] teams = gson.fromJson(lobbyInfo[1], int[].class);
+            version = gson.fromJson(lobbyInfo[2], int.class);
+            numberOfTeams = gson.fromJson(lobbyInfo[3], int.class);
+            host = gson.fromJson(lobbyInfo[4], String.class);
+
+            for (int i = 0; i < users.length; i++) {
+
+                playerFields[i].setText(users[i]);
+                int teamN = teams[i];
+
+                if (teamN != 0) {
+
+                    Label[] team = teamLabels[teamN - 1];
+
+                    for (Label field : team) {
+
+                        if (field.getText().matches("")) {
+                            field.setText(users[i]);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            lobbyUpdater = new LobbyUpdater(game, username, playerFields, teamLabels, joinTeamButtons, cancelButton, numberOfTeams,
+                    lobbyStage, chatBox);
+            lobbyUpdaterThread = new Thread(lobbyUpdater);
+            lobbyUpdaterThread.setDaemon(true);
+            lobbyUpdaterThread.start();
+
+        } else {
             return false;
         }
 
-        int version = (Integer) game.get(lobbyInfoVersion(username))[2];
-        int numberOfTeams = (Integer) game.get(lobbyInfoNTeams(username))[2];
-        String host = (String) game.get(lobbyInfoHost(username))[2];
-
+        //Set lobby text
         hostNameField.setText(host);
         String versionText = "Normal";
 
@@ -136,9 +145,28 @@ public class LobbyController {
         return true;
     }
 
+    public void shutdown(){
+        lobbyUpdater.stop();
+        lobbyUpdaterThread.interrupt();
+
+        if (isHost) {
+            try {
+                game.put("lobbyRequest","lobbyDisband", username, 0, "");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            game.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void handlePlay() throws InterruptedException {
         if (isHost) {
-            game.put("lobbyRequest", "startGame", username, 0);
+            game.put("lobbyRequest", "startGame", username, 0, "");
         }
     }
 
@@ -153,35 +181,16 @@ public class LobbyController {
         }
     }
 
-    public void shutdown(){
-        lobbyUpdater.stop();
-        lobbyUpdaterThread.interrupt();
-
-        if (setupGameController != null) {
-            try {
-                game.put("lobbyRequest","lobbyDisband", username, 0);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        try {
-            game.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void handleJoinTeam1() {
         if (joinTeam1Button.getText().matches("Leave")) {
             try {
-                game.put("lobbyRequest", "leaveTeam", username, 1);
+                game.put("lobbyRequest", "leaveTeam", username, 1, "");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                game.put("lobbyRequest", "joinTeam", username, 1);
+                game.put("lobbyRequest", "joinTeam", username, 1, "");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -191,13 +200,13 @@ public class LobbyController {
     public void handleJoinTeam2() {
         if (joinTeam2Button.getText().matches("Leave")) {
             try {
-                game.put("lobbyRequest", "leaveTeam", username, 2);
+                game.put("lobbyRequest", "leaveTeam", username, 2, "");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                game.put("lobbyRequest", "joinTeam", username, 2);
+                game.put("lobbyRequest", "joinTeam", username, 2, "");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -207,17 +216,34 @@ public class LobbyController {
     public void handleJoinTeam3() {
         if (joinTeam3Button.getText().matches("Leave")) {
             try {
-                game.put("lobbyRequest", "leaveTeam", username, 3);
+                game.put("lobbyRequest", "leaveTeam", username, 3, "");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                game.put("lobbyRequest", "joinTeam", username, 3);
+                game.put("lobbyRequest", "joinTeam", username, 3, "");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void handleTextBox(KeyEvent e){
+        if(e.getCode() == KeyCode.ENTER) {
+            handleChat();
+        }
+    }
+
+    public void handleChat(){
+        String text = textField.getText();
+        try {
+            game.put("lobbyRequest", "sendMessage", username, 0, text);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        textField.clear();
+        textField.requestFocus();
     }
 
     void setLobbyModel(LobbyModel lobbyModel) {
@@ -235,14 +261,6 @@ public class LobbyController {
     void setHost(boolean host) {
         isHost = host;
     }
-
-    void setStage(Stage lobbyStage) {
-        this.lobbyStage = lobbyStage;
-    }
-
-    public void setServerThread(Thread serverThread) {
-        this.serverThread = serverThread;
-    }
 }
 
 class LobbyUpdater implements Runnable {
@@ -254,12 +272,13 @@ class LobbyUpdater implements Runnable {
     private Button cancelButton;
     private int numberOfTeams;
     private Stage lobbyStage;
+    private VBox chatBox;
     private Space space;
     private volatile boolean exit;
 
     LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams,
                  Button[] joinTeamButtons, Button cancelButton, int numberOfTeams,
-                 Stage lobbyStage) {
+                 Stage lobbyStage, VBox chatBox) {
         this.space = space;
         this.username = username;
         this.playerFields = playerFields;
@@ -268,6 +287,7 @@ class LobbyUpdater implements Runnable {
         this.cancelButton = cancelButton;
         this.numberOfTeams = numberOfTeams;
         this.lobbyStage = lobbyStage;
+        this.chatBox = chatBox;
     }
 
     public void run() {
@@ -277,8 +297,29 @@ class LobbyUpdater implements Runnable {
                 Object[] lobbyUpdate = space.get(lobbyUpdate(username));
                 String type = (String) lobbyUpdate[1];
                 String actor = (String) lobbyUpdate[2];
+                String info = (String) lobbyUpdate[5];
 
                 switch (type) {
+                    case "chatMessage":
+                        Platform.runLater(
+                                    () -> {
+                                        String infoF = actor + ": " + info;
+                                        while(infoF.length()>35){
+                                                Label label = new Label(infoF.substring(0, 35));
+                                                label.setAlignment(Pos.CENTER_RIGHT);
+
+                                                chatBox.getChildren().add(label);
+                                                infoF = infoF.substring(35);
+                                            }
+
+                                        Label label = new Label(infoF);
+                                        label.setAlignment(Pos.CENTER_RIGHT);
+
+                                        chatBox.getChildren().add(label);
+                                });
+
+                        break;
+
                     case "disconnected":
                         //This user has lost connection
                         if (actor.matches(username)) {

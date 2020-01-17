@@ -1,4 +1,4 @@
-package Controller;
+package Lobby;
 
 import javafx.beans.binding.BooleanBinding;
 import javafx.fxml.FXMLLoader;
@@ -52,11 +52,10 @@ public class ConnectToGameController {
         LobbyController lobbyController = loader.getController();
         lobbyController.setConnectToGameController(this);
         lobbyController.setLobbyModel(lobbyModel);
-        lobbyController.setStage(lobbyStage);
         lobbyController.setHost(false);
 
         //Is connection refused?
-        if (lobbyController.setFields()) {
+        if (lobbyController.setup()) {
             mainMenuController.getSetupGameStage().close();
 
             Scene lobbyScene = new Scene(root);

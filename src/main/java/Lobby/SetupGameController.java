@@ -1,4 +1,4 @@
-package Controller;
+package Lobby;
 
 import javafx.beans.binding.BooleanBinding;
 import javafx.fxml.FXMLLoader;
@@ -13,7 +13,7 @@ import org.jspace.SequentialSpace;
 
 import java.io.IOException;
 
-import static Controller.Templates.IPPort;
+import static Lobby.Templates.IPPort;
 
 public class SetupGameController {
 
@@ -84,9 +84,7 @@ public class SetupGameController {
         lobbyController.setSetupGameController(this);
         lobbyController.setLobbyModel(lobbyModel);
         lobbyController.setHost(true);
-        lobbyController.setServerThread(serverThread);
-        lobbyController.setStage(lobbyStage);
-        lobbyController.setFields();
+        lobbyController.setup();
 
         Scene lobbyScene = new Scene(root);
 

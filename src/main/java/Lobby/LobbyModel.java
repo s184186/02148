@@ -1,4 +1,4 @@
-package Controller;
+package Lobby;
 
 public class LobbyModel {
 
