@@ -64,12 +64,15 @@ public class Game implements Runnable {
             //Users will be represented as string list and handed down from server.
             setupBoard();
             shuffleCards(users);
+            //TODO: put
             game.put("switch!"); //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
-            for(int i=0; i<noOfPlayers;i++){
-            Object[] switchInfo = game.get(switchReq.getFields());
-            switchCards(switchInfo);
+            for(int i = 0; i < noOfPlayers; i++){
+                //TODO: get
+                Object[] switchInfo = game.get(switchReq.getFields());
+                switchCards(switchInfo);
             }
 
+            //TODO: setupBoard() twice?
             setupBoard();
             // Move will b e represented by position, the card used and username.
         } catch (InterruptedException e) {
@@ -78,6 +81,7 @@ public class Game implements Runnable {
         while (true) {
             try {
                 if(winningTeam!=-1) break;
+                //TODO: query
                 Object[] potentialMove = game.query(move(playerTurn).getFields()); // A basic move will b e represented by position, the card used and username and extra field.
 
             } catch (InterruptedException e) {
@@ -102,6 +106,7 @@ public class Game implements Runnable {
                     decksize--;
                 }
             }
+            //TODO: put
             game.put(users[i], hand);
         }
         playerTurnIndex = random.nextInt(noOfPlayers);
@@ -112,6 +117,7 @@ public class Game implements Runnable {
         String from = (String) switchInfo[0];
         String to = (String) switchInfo[1];
         Cards card = (Cards) switchInfo[2];
+        //TODO: put
         game.put(to, card);
         //server tells users to mix cards
         //server tells user with username 'to' to add 'card' to his deck.
@@ -149,6 +155,7 @@ public class Game implements Runnable {
                         continue; //If you are already on that field, find an available place for your piece on that field.
                     if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                         board[endPosition].getPieces()[i] = username; //update board
+                        //TODO: get
                         game.get(move(username).getFields());
                         nextTurn(); //Figuring out which user's turn it is
                     } else {
@@ -157,6 +164,7 @@ public class Game implements Runnable {
                                 for (int k = 0; k < noOfPlayers; k++) {
                                     if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
                                         board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
+                                        //TODO: get
                                         game.get(move(username).getFields());
                                         nextTurn();
                                         break;
@@ -178,6 +186,7 @@ public class Game implements Runnable {
                 moves(potentialMove);
                 if (counter == 7) {
                     counter = 0;
+                    //TODO: get
                     game.get(move(username).getFields());
                     nextTurn();
                     break;
@@ -195,6 +204,7 @@ public class Game implements Runnable {
                                 continue; //If you are already on that field, find an available place for your piece on that field.
                             if (board[15 * i].getPieces()[j] == null) { //if there is room, insert piece there
                                 board[15 * i].getPieces()[j] = username; //update board
+                                //TODO: get
                                 game.get(move(username).getFields());
                                 nextTurn(); //Figuring out which user's turn it is
                                 break;
@@ -229,6 +239,7 @@ public class Game implements Runnable {
                         board[position].getPieces()[j] = tmp1;
                     }
                 }
+                //TODO: get
                 game.get(move(username).getFields());
                 nextTurn();
 
@@ -266,6 +277,7 @@ public class Game implements Runnable {
                     board[endPosition].getPieces()[0] = username;
                     finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username); //check if player is finished
                     if(isTeamDone(username)) {winningTeam = getTeamNumber(username); System.out.println("Team " + winningTeam +" won");}
+                    //TODO: get
                     game.get(move(username).getFields());
                     nextTurn();
                 } else if (position % 15 > endPosition % 15) { //if this is the case, you've crossed a homefield
@@ -275,6 +287,7 @@ public class Game implements Runnable {
                         goalSquaresUpper(homefieldPos, position, endPosition, username);
                         finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username);
                         if(isTeamDone(username)){ winningTeam = getTeamNumber(username);  System.out.println("Team " + winningTeam +" won");}
+                        //TODO: get
                         game.get(move(username).getFields()); //remove card from space/card was valid and has been used
                         nextTurn();
                         return;
@@ -298,6 +311,7 @@ public class Game implements Runnable {
                             continue; //If you are already on that field, find an available place for your piece on that field.
                         if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                             board[endPosition].getPieces()[i] = username; //update board
+                            //TODO: get
                             game.get(move(username).getFields());
                             nextTurn(); //Figuring out which user's turn it is
                             break;
@@ -310,6 +324,7 @@ public class Game implements Runnable {
                             for (int k = 0; k < 4; k++) {
                                 if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
                                     board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
+                                    //TODO: get
                                     game.get(move(username).getFields());
                                     nextTurn();
                                     break;
