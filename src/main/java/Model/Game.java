@@ -67,10 +67,12 @@ public class Game implements Runnable {
         while (true) {
             try {
                 if (winningTeam != -1) break;
-                //TODO: query
-                Object[] potentialMove = game.query(move(playerTurn).getFields()); // A basic move will b e represented by position, the card used and username and extra field.
                 if(game.getp(new ActualField("need cards"))!=null) needCardsCounter++;
                 if(needCardsCounter==noOfPlayers) shuffleCards(users);
+                //TODO: query
+                Object[] potentialMove = game.query(move(playerTurn).getFields()); // A basic move will b e represented by position, the card used and username and extra field.
+                moves(potentialMove);
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -79,7 +81,7 @@ public class Game implements Runnable {
     }
 
     private void setupDeck(){
-        deck= new ArrayList<CardObj>() {
+        deck= new ArrayList<>() {
             {
                 add(new CardObj(Cards.THREE));
                 add(new CardObj(Cards.FOUR));
@@ -155,7 +157,7 @@ public class Game implements Runnable {
         switch (card) {
 
             case FOUR: //move backwards
-                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username)
+                if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username))
                     return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn)))
                     return; //If you've finished and you're trying to move an opponents piece.
@@ -202,7 +204,7 @@ public class Game implements Runnable {
 
                 break;
             case SEVEN: //split
-                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username)
+                if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username))
                     return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn)))
                     return; //If you've finished and you're trying to move an opponents piece.
@@ -219,7 +221,7 @@ public class Game implements Runnable {
                 }
                 return;
             case HEART: //release piece
-                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username)
+                if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username))
                     return; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn)))
                     return; //If you've finished and you're trying to move an opponents piece.
@@ -519,7 +521,6 @@ public class Game implements Runnable {
                 count += 2;
             }
         } else {
-            count = 0;
             for (Player x : teamOne) {
                 setStartAndEndFields(count, x);
                 count += 3;
@@ -563,7 +564,7 @@ public class Game implements Runnable {
     private int getTeamNumber(String username) {
         int index = 0;
         for (int i = 0; i < noOfPlayers; i++) {
-            if (users[i] == username) {
+            if (users[i].matches(username)) {
                 index = i;
             }
         }
@@ -588,7 +589,7 @@ public class Game implements Runnable {
     private int getPlayerIndex(String username) {
         ArrayList<Player> tmp = getTeamByUsername(username);
         for (int i = 0; i < tmp.size(); i++) {
-            if (tmp.get(i).getUsername() == username) return i;
+            if (tmp.get(i).getUsername().matches(username)) return i;
         }
         return -1;
     }
