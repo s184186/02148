@@ -2,6 +2,7 @@ package Lobby;
 
 import javafx.animation.TranslateTransition;
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -12,10 +13,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.jspace.SequentialSpace;
-import org.jspace.Space;
+
 import java.awt.*;
 
 import static java.lang.Math.abs;
@@ -24,26 +25,24 @@ import javafx.geometry.Insets;
 
 public class GameUpdater extends Application {
 
-    static Space space = new SequentialSpace();
-    private static String username = "fred", card = "0";
     public StackPane stackPane;
     private static Field[] fields;
     public Pane pane;
     public Label label;
 
-    public final int boardWidth = 850;
-    public final int buttonHeight = 150;
+    public final int boardWidth = 900;
+    public final int buttonHeight = 100;
     public final int boardHeight = boardWidth+buttonHeight;
-
 
     public static int numberOfFields;
     public final int startFieldOffset = 7;
-    public final int version = 0;
+    public final int version = 1;
 
-    public final int startFieldRadius = 90;
-    public final int pieceRadius = 25;
+    public final int pieceRadius = 15;
+    public final int startFieldRadius = 4*pieceRadius;
+    public final int endFieldRadius = round(2.5f*pieceRadius);
 
-    public final int outerCircleBorderPadding = 100;
+    public final int outerCircleBorderPadding = 150;
     public final int innerCircleBorderPadding = outerCircleBorderPadding+250;
     public Label card4;
     public Label card2;
@@ -123,209 +122,154 @@ public class GameUpdater extends Application {
         for(int i = 0; i < numberOfFields; i++){
             double v = Math.cos(Math.toRadians((i+startFieldOffset)*360/numberOfFields));
             double w = Math.sin(Math.toRadians((i+startFieldOffset)*360/numberOfFields));
-            int x1 = (int) ((v*(boardWidth-innerCircleBorderPadding)/2)+boardWidth/2);
-            int y1 = (int) ((w*(boardWidth-innerCircleBorderPadding)/2)+boardWidth/2);
-            int x2 = (int) ((v*(boardWidth-outerCircleBorderPadding)/2)+boardWidth/2);
-            int y2 = (int) ((w*(boardWidth-outerCircleBorderPadding)/2)+boardWidth/2);
+            double x1 = (v*(boardWidth-innerCircleBorderPadding)/2)+boardWidth/2.;
+            double y1 = (w*(boardWidth-innerCircleBorderPadding)/2)+boardWidth/2.;
+            double x2 = (v*(boardWidth-outerCircleBorderPadding)/2)+boardWidth/2.;
+            double y2 = (w*(boardWidth-outerCircleBorderPadding)/2)+boardWidth/2.;
             fields[i].setStart(x1, y1, x2, y2, i, version);
             fields[(i+numberOfFields-1)%numberOfFields].setEnd(x1, y1, x2, y2);
         }
 
-        for(int i = 0; i < numberOfFields; i++){
+        for(int i = 0; i < numberOfFields; i++) {
             fields[i].setField();
             int finalI = i;
-            fields[i].getPath().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedField =  fields[finalI]);
-            int xO, yO;
+            fields[i].getPath().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedField = fields[finalI]);
+            double xO, yO;
 
-            int xI = (int) ((fields[i].getX1S()+fields[i].getX1E())/2);
-            int yI = (int) ((fields[i].getY1S()+fields[i].getY1E())/2);
+            double xI = (fields[i].getX1S() + fields[i].getX1E()) / 2;
+            double yI = (fields[i].getY1S() + fields[i].getY1E()) / 2;
 
-            int x = (int) (fields[i].getX2S()+fields[i].getX2E());
-            int y = (int) (fields[i].getY2S()+fields[i].getY2E());
+            double x = (fields[i].getX2S() + fields[i].getX2E()) / 2;
+            double y = (fields[i].getY2S() + fields[i].getY2E()) / 2;
 
-            double v = Math.cos(Math.toRadians((i+0.5+startFieldOffset)*360/numberOfFields));
-            double w = Math.sin(Math.toRadians((i+0.5+startFieldOffset)*360/numberOfFields));
+            double v = Math.cos(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
+            double w = Math.sin(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
 
-            double v1 = Math.cos(Math.toRadians((i)*360/numberOfFields));
-            double w1 = Math.sin(Math.toRadians((i)*360/numberOfFields));
+            double v1 = (int) round(Math.cos(Math.toRadians((i) * 360 / numberOfFields)));
+            double w1 = (int) round(Math.sin(Math.toRadians((i) * 360 / numberOfFields)));
 
-            double ratio1 = v-v*4/5;
-            double ratio2 = w-w*4/5;
+            double ratio1 = abs(v * ((3.5 - v1 * 2.5) / 5) - w1 * w * 2.5 / 5);
+            double ratio2 = abs(w * ((3.5 - w1 * 2.5) / 5) - v1 * v * 2.5 / 5);
 
-            int width1 = 60;
-             if(i==0){
-                if(numberOfFields==90){
-                    xO = (int) round(x/2.-(startFieldRadius*ratio2));
-                    yO = (int) round(y/2.-(startFieldRadius*ratio2));
+            xO = x - (startFieldRadius * ratio1);
+            yO = y - (startFieldRadius * ratio2);
 
-                    int o11 = 3*width1/4;
-                    int o12 = o11 + 10;
-                    int o13 = o12 + 10;
-                    int o14 = o13 + 10;
+            int sizeDec = 5;
+            double endFieldDistance1 = 25;
+            double endFieldDistance2 = -25;
 
-                    int o21 = 11*width1/12;
-                    int o22 = o21 + 15;
-                    int o23 = o22 + 15;
-                    int o24 = o23 + 15;
+            double offsetx1 = v1 * (endFieldRadius / 2.) * abs(v) - w1 * (endFieldRadius / 2.) * abs(w);
+            double offsety1 = w1 * (endFieldRadius / 2.) * abs(w) - v1 * (endFieldRadius / 2.) * abs(v);
 
-                    drawEndFields(xI, yI, width1, o11, o12, o13, o14, o21, o22, o23, o24,purple);
-                } else {
-                    System.out.println(v);
-                    System.out.println(w);
-                    xO = (int) (x/2-(startFieldRadius*ratio1));
-                    yO = (int) (y/2-(startFieldRadius*ratio2));
+            if (numberOfFields == 90) {
+                if (i == 0) {
+                    xO = (x - (startFieldRadius / 12.));
+                    yO = (y - (startFieldRadius / 4.));
 
-                    int o11 = (int) round(width1*ratio1);
-                    int o12 = o11 + 20;
-                    int o13 = o12 + 20;
-                    int o14 = o13 + 20;
+                    endFieldDistance1 = 25;
+                    endFieldDistance2 = 14;
 
-                    endFields[0] = drawEndFields(xI, yI, width1, o11, o12, o13, o14, o11, o12, o13, o14,blue);
+                    offsetx1 = 5 * endFieldRadius / 12;
+                    offsety1 = endFieldRadius / 4.;
+
+                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, purple, sizeDec, endFieldDistance1, endFieldDistance2);
+                    pieces[0] = drawStartPieces(xO, yO, purple);
+                } else if (i == 15) {
+                    xO = x - (startFieldRadius / 2.);
+                    yO = y;
+
+                    endFieldDistance1 = 0;
+                    endFieldDistance2 = 25;
+
+                    offsetx1 = 0;
+                    offsety1 = endFieldRadius / 2;
+
+                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, red, sizeDec, endFieldDistance1, endFieldDistance2);
+                    pieces[1] = drawStartPieces(xO, yO, red);
+                } else if (i == 30) {
+                    xO = x - (11 * startFieldRadius / 12.);
+                    yO = y - startFieldRadius / 4.;
+
+                    endFieldDistance1 = -25;
+                    endFieldDistance2 = 14;
+
+                    offsetx1 = -5 * endFieldRadius / 12;
+                    offsety1 = endFieldRadius / 4.;
+
+                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,orange,sizeDec, endFieldDistance1, endFieldDistance2);
+                    pieces[2] = drawStartPieces(xO, yO, orange);
+
+                } else if (i == 45) {
+                    xO = x - (11 * startFieldRadius / 12.);
+                    yO = y - (3 * startFieldRadius / 4.);
+
+                    endFieldDistance1 = -25;
+                    endFieldDistance2 = -14;
+
+                    offsetx1 = -5* endFieldRadius / 12;
+                    offsety1 = -endFieldRadius / 4;
+
+                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,yellow,sizeDec, endFieldDistance1, endFieldDistance2);
+                    pieces[3] = drawStartPieces(xO, yO, yellow);
+                } else if (i == 60) {
+                    xO = x - (startFieldRadius / 2.);
+                    yO = y - (startFieldRadius);
+
+                    endFieldDistance1 = 0;
+                    endFieldDistance2 = -25;
+
+                    offsetx1 = 0;
+                    offsety1 = -endFieldRadius / 2;
+
+                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,green,sizeDec, endFieldDistance1, endFieldDistance2);
+                    drawStartPieces(xO, yO, green);
+
+                } else if (i == 75) {
+                    xO = x - (startFieldRadius / 12.);
+                    yO = y - (3 * startFieldRadius / 4.);
+
+                    endFieldDistance1 = 25;
+                    endFieldDistance2 = -14;
+
+                    offsetx1 = 5 * endFieldRadius / 12;
+                    offsety1 = -endFieldRadius / 4.;
+
+                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,blue,sizeDec, endFieldDistance1, endFieldDistance2);
+                    drawStartPieces(xO, yO, blue);
                 }
-
-
-                pieces[0] = drawStartPieces(xO, yO, blue);
-
-            } else if(i==15){
-                if(numberOfFields==90){
-                    xO = x/2-(startFieldRadius/2);
-                    yO = y/2;
-
-                    int o11 = width1;
-                    int o12 = o11 + 17;
-                    int o13 = o12 + 17;
-                    int o14 = o13 + 17;
-
-                    int o21 = width1/2;
-                    int o22 = o21 - 3;
-                    int o23 = o22 - 3;
-                    int o24 = o23 - 3;
-
-                    drawEndFields(xI, yI, width1, o11, o12, o13, o14, o21, o22, o23, o24,red);
-                } else {
-                    System.out.println(v);
-                    System.out.println(w);
-                    xO = (int) (x/2-(startFieldRadius*ratio1));
-                    yO = (int) (y/2-(startFieldRadius*ratio2));
-
-                    int o11 = (int) round(width1*ratio1);
-                    int o12 = o11 + 20;
-                    int o13 = o12 + 20;
-                    int o14 = o13 + 20;
-
-                    int o21 = (int) round(width1*ratio2);
-                    int o22 = o21 - 25;
-                    int o23 = o22 - 25;
-                    int o24 = o23 - 25;
-
-                    endFields[1] = drawEndFields(xI, yI, width1, o11, o12, o13, o14, o21, o22, o23, o24,red);
+            } else {
+                if (i == 0) {
+                    endFields[0] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsetx1, blue, sizeDec, endFieldDistance1, endFieldDistance1);
+                    pieces[0] = drawStartPieces(xO, yO, blue);
+                } else if (i == 15) {
+                    endFields[1] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, red, sizeDec, endFieldDistance2, endFieldDistance1);
+                    pieces[1] = drawStartPieces(xO, yO, red);
+                } else if (i == 30) {
+                    endFields[2] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsetx1, yellow, sizeDec, endFieldDistance2, endFieldDistance2);
+                    pieces[2] = drawStartPieces(xO, yO, yellow);
+                } else if (i == 45) {
+                    endFields[3] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, green, sizeDec, endFieldDistance1, endFieldDistance2);
+                    pieces[3] = drawStartPieces(xO, yO, green);
                 }
-
-                 pieces[1] =drawStartPieces(xO, yO, red);
-            }else if(i==30){
-                if(numberOfFields==90){
-                    xO =  x/2-(11*startFieldRadius/12);
-                    yO = y/2-startFieldRadius/4;
-
-                    int o11 = 3*width1/4;
-                    int o12 = o11 + 15;
-                    int o13 = o12 + 15;
-                    int o14 = o13 + 15;
-
-                    int o21 = width1/12;
-                    int o22 = o21 - 20;
-                    int o23 = o22 - 20;
-                    int o24 = o23 - 20;
-
-                    drawEndFields(xI, yI, width1, o11, o12, o13, o14, o21, o22, o23, o24,orange);
-
-                } else {
-                    System.out.println(v);
-                    System.out.println(w);
-                    xO = (int) (x/2-(startFieldRadius*ratio1));
-                    yO = (int) (y/2-(startFieldRadius*ratio2));
-
-                    int o21 = (int) round(width1*ratio2);
-                    int o22 = o21 - 25;
-                    int o23 = o22 - 25;
-                    int o24 = o23 - 25;
-
-                    endFields[2] = drawEndFields(xI, yI, width1, o21, o22, o23, o24, o21, o22, o23, o24,yellow);
-                }
-
-                 pieces[2] =drawStartPieces(xO, yO, yellow);
-            }else if(i==45){
-                if(numberOfFields==90){
-                    xO = x/2-(11*startFieldRadius/12);
-                    yO = y/2-(3*startFieldRadius/4);
-
-                    int o11 = width1/12;
-                    int o12 = o11 + 15;
-                    int o13 = o12 + 15;
-                    int o14 = o13 + 15;
-
-                    int o21 = width1/4;
-                    int o22 = o21 - 20;
-                    int o23 = o22 - 20;
-                    int o24 = o23 - 20;
-
-                    drawEndFields(xI, yI, width1, o21, o22, o23, o24, o11, o12, o13, o14,yellow);
-
-                } else {
-                    System.out.println(v);
-                    System.out.println(w);
-                    xO = (int) (x/2-(startFieldRadius*ratio1));
-                    yO = (int) (y/2-(startFieldRadius*ratio2));
-
-                    int o11 = (int) round(width1*ratio1);
-                    int o12 = o11 + 20;
-                    int o13 = o12 + 20;
-                    int o14 = o13 + 20;
-
-                    int o21 = (int) round(width1*ratio2);
-                    int o22 = o21 - 25;
-                    int o23 = o22 - 25;
-                    int o24 = o23 - 25;
-
-                    endFields[3] = drawEndFields(xI, yI, width1, o21, o22, o23, o24, o11, o12, o13, o14, green);
-                }
-
-                 pieces[3] =drawStartPieces(xO, yO, green);
-            } else if (i==60){
-                 xO = x/2-(startFieldRadius/2);
-                 yO = y/2-(startFieldRadius);
-
-                 int o11 = width1/2;
-                 int o12 = o11 + 15;
-                 int o13 = o12 + 15;
-                 int o14 = o13 + 15;
-
-                 int o21 = 0;
-                 int o22 = o21 - 20;
-                 int o23 = o22 - 20;
-                 int o24 = o23 - 20;
-
-                 drawEndFields(xI, yI, width1, o21, o22, o23, o24, o11, o12, o13, o14,blue);
-                 drawStartPieces(xO, yO, green);
-
-            } else if (i==75){
-                 xO = x/2-(startFieldRadius/12);
-                 yO = y/2-(3*startFieldRadius/4);
-
-                 int o11 = 11*width1/12;
-                 int o12 = o11 + 15;
-                 int o13 = o12 + 15;
-                 int o14 = o13 + 15;
-
-                 int o21 = width1/4;
-                 int o22 = o21 - 20;
-                 int o23 = o22 - 20;
-                 int o24 = o23 - 20;
-
-                 drawEndFields(xI, yI, width1, o21, o22, o23, o24, o11, o12, o13, o14,blue);
-                 drawStartPieces(xO, yO, blue);
             }
         }
+
+
+        Line line = new Line();
+        line.setStartX(0);
+        line.setStartY(0);
+        line.setEndX(boardWidth);
+        line.setEndY(boardWidth);
+        line.toFront();
+        pane.getChildren().add(line);
+
+        line = new Line();
+        line.setStartX(0);
+        line.setStartY(boardWidth);
+        line.setEndX(boardWidth);
+        line.setEndY(0);
+        line.toFront();
+        pane.getChildren().add(line);
     }
 
     private void resetBoard() {
@@ -384,24 +328,30 @@ public class GameUpdater extends Application {
         field1.setCircle(endField1);
         endField1.setFill(color);
         endField1.setStroke(Paint.valueOf("black"));
-        endField1.setOnMouseEntered(e -> endField1.fillProperty().setValue(((Color)endField1.getFill()).darker()));
-        endField1.setOnMousePressed(e -> endField1.fillProperty().setValue(((Color)endField1.getFill()).darker()));
-        endField1.setOnMouseReleased(e -> endField1.fillProperty().setValue(((Color)endField1.getFill()).brighter()));
-        endField1.setOnMouseExited(e -> endField1.fillProperty().setValue(((Color)endField1.getFill()).brighter()));
+        makeDarker(endField1);
         endField1.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedField = field1);
+        endField1.toBack();
         pane.getChildren().add(endField1);
         return field1;
     }
 
-    private Field[] drawEndFields(int xI, int yI, int width1, int o11, int o12, int o13, int o14, int o21, int o22, int o23, int o24, Color color) {
-        int width2 = width1 - 5;
-        int width3 = width2 - 5;
-        int width4 = width3 - 5;
+    private Field[] drawEndFields(double xI, double yI, int width1, double offsetx1, double offsety1, Color color, int sizeDec, double endFieldDistance2, double endFieldDistance1) {
+        int width2 = width1 - sizeDec;
+        int width3 = width2 - sizeDec;
+        int width4 = width3 - sizeDec;
 
-        Field endField1 = drawEndField(xI-o21+width1/2., yI-o11+width1/2., width1/2, color);
-        Field endField2 =drawEndField(xI-o22+width2/2., yI-o12+width2/2., width2/2, color);
-        Field endField3 =drawEndField(xI-o23+width3/2., yI-o13+width3/2., width3/2, color);
-        Field endField4 = drawEndField(xI-o24+width4/2., yI-o14+width4/2., width4/2, color);
+        double offsetx2 = offsetx1 + endFieldDistance2;
+        double offsetx3 = offsetx2 + endFieldDistance2;
+        double offsetx4 = offsetx3 + endFieldDistance2;
+
+        double offsety2 = offsety1 + endFieldDistance1;
+        double offsety3 = offsety2 + endFieldDistance1;
+        double offsety4 = offsety3 + endFieldDistance1;
+
+        Field endField1 = drawEndField(xI-offsetx1, yI-offsety1, width1/2, color);
+        Field endField2 = drawEndField(xI-offsetx2, yI-offsety2, width2/2, color);
+        Field endField3 = drawEndField(xI-offsetx3, yI-offsety3, width3/2, color);
+        Field endField4 = drawEndField(xI-offsetx4, yI-offsety4, width4/2, color);
 
         return new Field[]{endField1, endField2, endField3, endField4};
     }
@@ -414,70 +364,43 @@ public class GameUpdater extends Application {
         rectangle1.setWidth(boardWidth/4);
         rectangle1.setFill(Color.DARKGRAY);
         rectangle1.setStroke(Color.BLACK);
-        rectangle1.setOnMouseEntered(e -> rectangle1.fillProperty().setValue(((Color)rectangle1.getFill()).darker()));
-        rectangle1.setOnMousePressed(e -> rectangle1.fillProperty().setValue(((Color)rectangle1.getFill()).darker()));
-        rectangle1.setOnMouseReleased(e -> rectangle1.fillProperty().setValue(((Color)rectangle1.getFill()).brighter()));
-        rectangle1.setOnMouseExited(e -> rectangle1.fillProperty().setValue(((Color)rectangle1.getFill()).brighter()));
+        makeDarker(rectangle1);
         pane.getChildren().add(rectangle1);
     }
 
-    private Piece[] drawStartPieces(int x, int y, Color color) {
-        Circle startField = new Circle(x+startFieldRadius/2, y+startFieldRadius/2, startFieldRadius/2);
+    public static void makeDarker(Shape shape){
+        EventHandler<MouseEvent> mouseEventEventHandler = e -> shape.fillProperty().setValue(((Color) shape.getFill()).darker());
+        EventHandler<MouseEvent> mouseEventEventHandler1 = e -> shape.fillProperty().setValue(((Color) shape.getFill()).brighter());
+        shape.setOnMouseEntered(mouseEventEventHandler);
+        shape.setOnMousePressed(mouseEventEventHandler);
+        shape.setOnMouseReleased(mouseEventEventHandler1);
+        shape.setOnMouseExited(mouseEventEventHandler1);
+    }
+
+    private Piece drawPiece(double x, double y, Color color){
+        Piece piece = new Piece();
+        Circle pieceC = new Circle(x, y, pieceRadius/2);
+        piece.setCircle(pieceC);
+        piece.setName("1"+piece);
+        pieceC.setFill(color);
+        pieceC.setStroke(Paint.valueOf("black"));
+        pieceC.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedPiece = piece);
+        makeDarker(pieceC);
+        pieceC.toBack();
+        pane.getChildren().add(pieceC);
+        return piece;
+    }
+
+    private Piece[] drawStartPieces(double x, double y, Color color) {
+        Circle startField = new Circle(x+startFieldRadius/2., y+startFieldRadius/2., startFieldRadius/2);
         startField.setFill(color);
         startField.setStroke(Color.BLACK);
         pane.getChildren().add(startField);
-        
-        Piece piece1 = new Piece();
-        Circle piece1C = new Circle(x+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., y+startFieldRadius-(pieceRadius*1.5)+pieceRadius/2., pieceRadius/2);
-        piece1.setCircle(piece1C);
-        piece1.setName("1"+color);
-        piece1C.setFill(color);
-        piece1C.setStroke(Paint.valueOf("black"));
-        piece1C.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedPiece = piece1);
-        piece1C.setOnMouseEntered(e -> piece1C.fillProperty().setValue(((Color)piece1C.getFill()).darker()));
-        piece1C.setOnMouseExited(e -> piece1C.fillProperty().setValue(((Color)piece1C.getFill()).brighter()));
-        piece1C.setOnMousePressed(e -> piece1C.fillProperty().setValue(((Color)piece1C.getFill()).darker()));
-        piece1C.setOnMouseReleased(e -> piece1C.fillProperty().setValue(((Color)piece1C.getFill()).brighter()));
-        pane.getChildren().add(piece1C);
 
-        Piece piece2 = new Piece();
-        Circle piece2C = new Circle(x+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., y+pieceRadius/2.+pieceRadius/2., pieceRadius/2);
-        piece2.setCircle(piece2C);
-        piece2.setName("2"+color);
-        piece2C.setFill(color);
-        piece2C.setStroke(Paint.valueOf("black"));
-        piece2C.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedPiece = piece2);
-        piece2C.setOnMouseEntered(e -> piece2C.fillProperty().setValue(((Color)piece2C.getFill()).darker()));
-        piece2C.setOnMouseExited(e -> piece2C.fillProperty().setValue(((Color)piece2C.getFill()).brighter()));
-        piece2C.setOnMousePressed(e -> piece2C.fillProperty().setValue(((Color)piece2C.getFill()).darker()));
-        piece2C.setOnMouseReleased(e -> piece2C.fillProperty().setValue(((Color)piece2C.getFill()).brighter()));
-        pane.getChildren().add(piece2C);
-
-        Piece piece3 = new Piece();
-        Circle piece3C = new Circle(x+startFieldRadius-(pieceRadius*1.5)+pieceRadius/2., y+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., pieceRadius/2);
-        piece3.setCircle(piece3C);
-        piece3.setName("3"+color);
-        piece3C.setFill(color);
-        piece3C.setStroke(Paint.valueOf("black"));
-        piece3C.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedPiece = piece3);
-        piece3C.setOnMouseEntered(e -> piece3C.fillProperty().setValue(((Color)piece3C.getFill()).darker()));
-        piece3C.setOnMouseExited(e -> piece3C.fillProperty().setValue(((Color)piece3C.getFill()).brighter()));
-        piece3C.setOnMousePressed(e -> piece3C.fillProperty().setValue(((Color)piece3C.getFill()).darker()));
-        piece3C.setOnMouseReleased(e -> piece3C.fillProperty().setValue(((Color)piece3C.getFill()).brighter()));
-        pane.getChildren().add(piece3C);
-
-        Piece piece4 = new Piece();
-        Circle piece4C = new Circle(x+pieceRadius/2.+pieceRadius/2., y+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., pieceRadius/2);
-        piece4.setCircle(piece4C);
-        piece4.setName("4"+color);
-        piece4C.setFill(color);
-        piece4C.setStroke(Paint.valueOf("black"));
-        piece4C.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedPiece = piece4);
-        piece4C.setOnMouseEntered(e -> piece4C.fillProperty().setValue(((Color)piece4C.getFill()).darker()));
-        piece4C.setOnMouseExited(e -> piece4C.fillProperty().setValue(((Color)piece4C.getFill()).brighter()));
-        piece4C.setOnMousePressed(e -> piece4C.fillProperty().setValue(((Color)piece4C.getFill()).darker()));
-        piece4C.setOnMouseReleased(e -> piece4C.fillProperty().setValue(((Color)piece4C.getFill()).brighter()));
-        pane.getChildren().add(piece4C);
+        Piece piece1 = drawPiece(x+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., y+startFieldRadius-(pieceRadius*1.5)+pieceRadius/2., color);
+        Piece piece2 = drawPiece(x+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., y+pieceRadius/2.+pieceRadius/2.,color);
+        Piece piece3 = drawPiece(x+startFieldRadius-(pieceRadius*1.5)+pieceRadius/2., y+(startFieldRadius-pieceRadius)/2.+pieceRadius/2.,color);
+        Piece piece4 = drawPiece(x+pieceRadius/2.+pieceRadius/2., y+(startFieldRadius-pieceRadius)/2.+pieceRadius/2.,color);
 
         return new Piece[]{piece1, piece2, piece3, piece4};
     }
@@ -560,7 +483,7 @@ class Field{
         this.pane = pane;
     }
 
-    public void setEnd(int x1E, int y1E, int x2E, int y2E){
+    public void setEnd(double x1E, double y1E, double x2E, double y2E){
         this.x1E = x1E;
         this.y1E = y1E;
         this.x2E = x2E;
@@ -568,7 +491,7 @@ class Field{
 
     }
 
-    public void setStart(int x1S, int y1S, int x2S, int y2S, int index, int version){
+    public void setStart(double x1S, double y1S, double x2S, double y2S, int index, int version){
         this.x1S = x1S;
         this.y1S = y1S;
         this.x2S = x2S;
@@ -637,10 +560,7 @@ class Field{
 
         path.fillProperty().setValue(color);
 
-        path.setOnMouseEntered(e -> path.fillProperty().setValue(((Color)path.getFill()).darker()));
-        path.setOnMousePressed(e -> path.fillProperty().setValue(((Color)path.getFill()).darker()));
-        path.setOnMouseReleased(e -> path.fillProperty().setValue(((Color)path.getFill()).brighter()));
-        path.setOnMouseExited(e -> path.fillProperty().setValue(((Color)path.getFill()).brighter()));
+        GameUpdater.makeDarker(path);
 
         pane.getChildren().add(path);
 
