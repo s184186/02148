@@ -7,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -73,6 +74,7 @@ public class GameUpdater extends Application {
         Scene scene = new Scene(root);
         primaryStage.setResizable(false);
         primaryStage.setTitle("Partners");
+        primaryStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         primaryStage.setScene(scene);
         primaryStage.show();
 
