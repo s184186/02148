@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -40,12 +41,13 @@ public class MainMenuController {
         Scene lobbyScene = new Scene(root);
 
         setupGameStage.setScene(lobbyScene);
+        setupGameStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         setupGameStage.setResizable(false);
         mainMenuView.getMainMenuStage().close();
         setupGameStage.show();
     }
 
-    public void handlePlayBots() throws IOException {
+    public void handleConnectGame() throws IOException {
         setupGameStage = new Stage();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/connectToGame.fxml"));
@@ -58,6 +60,7 @@ public class MainMenuController {
 
         setupGameStage.setScene(lobbyScene);
         setupGameStage.setResizable(false);
+        setupGameStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         mainMenuView.getMainMenuStage().close();
         setupGameStage.show();
     }

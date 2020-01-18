@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.scene.image.Image;
 
 import java.io.IOException;
 
@@ -31,6 +32,7 @@ public class MainMenuView extends Application {
         mainMenuStage.setResizable(false);
         mainMenuStage.setTitle("Partners");
         mainMenuStage.setScene(scene);
+        mainMenuStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         mainMenuStage.show();
     }
 

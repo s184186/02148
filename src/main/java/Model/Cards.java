@@ -44,7 +44,7 @@ public enum Cards {
         return function;
     }
 
-    public Cards getEnum(int moves){
+    public Cards getEnumByNoOfMoves(int moves){
         for(Cards x : Cards.values()){
             if (x.getMoves()==moves) return x;
         }

@@ -13,7 +13,7 @@
                 <Font name="Courier New" size="38.0" fx:id="x1"/>
             </font>
         </Button>
-        <Button fx:id="connectGame" font="$x1" mnemonicParsing="false" onAction="#handlePlayBots" prefHeight="166.0"
+        <Button fx:id="connectGame" font="$x1" mnemonicParsing="false" onAction="#handleConnectGame" prefHeight="166.0"
                 prefWidth="500.0" style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);"
                 text="Connect to game"/>
         <Button fx:id="exitGame" font="$x1" mnemonicParsing="false" onAction="#handleExit" prefHeight="166.0"
