@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane fx:id="stackPane" prefHeight="900.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Lobby.GameUpdater">
+   <children>
+      <Pane fx:id="pane">
+         <children>
+            <Label fx:id="label" alignment="CENTER" contentDisplay="CENTER" layoutX="270.0" layoutY="350.0" prefHeight="17.0" prefWidth="160.0" />
+            <Label fx:id="card1" alignment="CENTER" contentDisplay="CENTER" layoutX="20.0" layoutY="800.0" prefHeight="17.0" prefWidth="135.0" text="ddddddddddddddddddd" />
+            <Label fx:id="card2" alignment="CENTER" contentDisplay="CENTER" layoutX="195.0" layoutY="800.0" prefHeight="17.0" prefWidth="135.0" text="ddddddddddddddddddd" />
+            <Label fx:id="card3" alignment="CENTER" contentDisplay="CENTER" layoutX="370.0" layoutY="800.0" prefHeight="17.0" prefWidth="135.0" text="ddddddddddddddddddd" />
+            <Label fx:id="card4" alignment="CENTER" contentDisplay="CENTER" layoutX="545.0" layoutY="800.0" prefHeight="17.0" prefWidth="135.0" text="ddddddddddddddddddd" />
+         </children>
+      </Pane>
+   </children>
+</StackPane>
