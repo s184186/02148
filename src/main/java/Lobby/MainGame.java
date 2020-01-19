@@ -1,8 +1,10 @@
 package Lobby;
 
+import com.google.gson.Gson;
 import org.jspace.Space;
 
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class MainGame {
 
@@ -28,5 +30,25 @@ public class MainGame {
         System.out.println("Version: " + version);
         System.out.println("Host: " + host);
         System.out.println("Number of teams: " + numberOfTeams);
+        Gson gson = new Gson();
+        int[] pieceIndexes = {1};
+        int[] positions = {1};
+
+        String pieceIndexesJson = gson.toJson(pieceIndexes);
+        String positionsJson = gson.toJson(positions);
+
+        try {
+            game.put("gameUpdate", "playerMove", host, host, "", pieceIndexesJson, positionsJson);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Scanner in = new Scanner(System.in);
+        in.next();
+        try {
+            game.put("gameUpdate", "resetBoard", "", host, "", "", "");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

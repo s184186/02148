@@ -83,6 +83,9 @@ public class Server implements Runnable {
             Object[] gameUpdate = server.get(new ActualField("gameUpdate"), new FormalField(String.class));
             if(((String) gameUpdate[1]).matches("startGame")){
                 launchGameServer(server, game);
+            } else {
+                gameRepository.closeGate(gate);
+                gameRepository.shutDown();
             }
 
         } catch (Exception e) {
@@ -91,9 +94,6 @@ public class Server implements Runnable {
         } finally {
             userPinger.stop(); //Stop while loop
             userPingerThread.interrupt(); //Interrupt blocking calls
-
-            gameRepository.closeGate(gate);
-            gameRepository.shutDown();
         }
     }
 
@@ -263,6 +263,7 @@ class LobbyRequestReceiver implements Runnable {
                     case "startGame":
                         usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
                         for (Object[] user : usersConnected) {
+                            System.out.println("here");
                             game.put("lobbyUpdate", "gameStart", "", user[1], 0, "");
                         }
                         server.put("gameUpdate","startGame");

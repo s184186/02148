@@ -1,12 +1,17 @@
 package Lobby;
 
+import Model.Game;
 import com.google.gson.Gson;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
@@ -19,7 +24,6 @@ import java.io.IOException;
 import static Lobby.Templates.*;
 
 public class LobbyController {
-
 
     private static LobbyUpdater lobbyUpdater;
     public Label URIField;
@@ -69,7 +73,7 @@ public class LobbyController {
         }
 
         //Make sure lobby closes properly when user closes window
-        lobbyStage.setOnHiding(event -> shutdown());
+//        lobbyStage.setOnHiding(event -> shutdown());
 
         String ip = lobbyModel.getIp();
         String URI = "tcp://" + ip + "/game?keep";
@@ -117,8 +121,9 @@ public class LobbyController {
                 }
             }
 
+            //TODO: Only pass controller to updater
             lobbyUpdater = new LobbyUpdater(game, username, playerFields, teamLabels, joinTeamButtons, cancelButton, numberOfTeams,
-                    lobbyStage, chatBox);
+                    lobbyStage, chatBox, this);
             lobbyUpdaterThread = new Thread(lobbyUpdater);
             lobbyUpdaterThread.setDaemon(true);
             lobbyUpdaterThread.start();
@@ -143,6 +148,33 @@ public class LobbyController {
         numberOfTeamsField.setText(String.valueOf(numberOfTeams));
         URIField.setText(ip);
         return true;
+    }
+
+    public void startGame(){
+        lobbyStage.close();
+        Stage stage = new Stage();
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/game.fxml"));
+        Parent root = null;
+
+        try {
+            root = fxmlLoader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        GameView gameView = fxmlLoader.getController();
+        gameView.setSpace(game);
+        gameView.setUsername(username);
+
+        Scene scene = new Scene(root);
+        stage.setResizable(false);
+        stage.setTitle("Partners");
+        stage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
+        stage.setScene(scene);
+        stage.show();
+
+        GameUpdater gameUpdater = new GameUpdater(game, username, gameView);
+        new Thread(gameUpdater).start();
     }
 
     public void shutdown(){
@@ -273,12 +305,13 @@ class LobbyUpdater implements Runnable {
     private int numberOfTeams;
     private Stage lobbyStage;
     private VBox chatBox;
+    private LobbyController lobbyController;
     private Space space;
     private volatile boolean exit;
 
     LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams,
                  Button[] joinTeamButtons, Button cancelButton, int numberOfTeams,
-                 Stage lobbyStage, VBox chatBox) {
+                 Stage lobbyStage, VBox chatBox, LobbyController lobbyController) {
         this.space = space;
         this.username = username;
         this.playerFields = playerFields;
@@ -288,6 +321,7 @@ class LobbyUpdater implements Runnable {
         this.numberOfTeams = numberOfTeams;
         this.lobbyStage = lobbyStage;
         this.chatBox = chatBox;
+        this.lobbyController = lobbyController;
     }
 
     public void run() {
@@ -420,10 +454,10 @@ class LobbyUpdater implements Runnable {
                     case "gameStart":
                         Platform.runLater(
                                 () -> {
-                                    lobbyStage.close();
+                                    lobbyController.startGame();
                                 }
                         );
-                        System.out.println("game has started");
+                        exit = true;
                         break;
                 }
             }

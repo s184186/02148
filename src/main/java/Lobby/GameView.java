@@ -1,7 +1,10 @@
 package Lobby;
 
+import Model.Cards;
+import com.google.gson.Gson;
 import javafx.animation.TranslateTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -17,25 +20,27 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import java.awt.*;
+import java.io.IOException;
 
-import static java.lang.Math.abs;
 import static java.lang.Math.round;
-import javafx.geometry.Insets;
 
-public class GameUpdater extends Application {
+import javafx.geometry.Insets;
+import org.jspace.ActualField;
+import org.jspace.FormalField;
+import org.jspace.Space;
+
+public class GameView{
 
     public StackPane stackPane;
-    private static Field[] fields;
     public Pane pane;
-    public Label label;
+    public Label card1, card2, card3, card4, label;
 
     private final int boardWidth = 900;
     private final int buttonHeight = 100;
     private final int boardHeight = boardWidth+buttonHeight;
 
-    private static final int version = 1;
+    private static final int version = 0;
     private static int numberOfFields = 60 + version * 30;
     private final int startFieldOffset = 7;
 
@@ -45,15 +50,16 @@ public class GameUpdater extends Application {
 
     private final int outerCircleBorderPadding = 150;
     private final int innerCircleBorderPadding = outerCircleBorderPadding+250;
-    public Label card4;
-    public Label card2;
-    public Label card1;
-    public Label card3;
-    private Piece[][] pieces = new Piece[6][4];
-    private Field[][] endFields = new Field[6][4];
 
-    private Piece selectedPiece = new Piece();
-    private Field selectedField = new Field(pane);
+    private static int pieceIndex = 0;
+    private Piece[] pieces = new Piece[24];
+
+    private static Field[][] endFields = new Field[6][4];
+    private static Field[] fields;
+
+    private Piece selectedPiece = null;
+    private Field selectedField = null;
+    private int selectedCard = -1;
 
     static Color blue = Color.rgb(61,88,222);
     static Color purple = Color.rgb(162,19,192);
@@ -61,22 +67,66 @@ public class GameUpdater extends Application {
     static Color orange = Color.rgb(255,149,23);
     static Color yellow = Color.rgb(233,227,23);
     static Color green  = Color.rgb(24,170,24);
+    private Space space;
+    private String username;
 
-    public static void main(String[] args){
-        launch(args);
+//    public static void main(String[] args){
+//        launch(args);
+//    }
+//
+//    @Override
+//    public void start(Stage primaryStage) throws InterruptedException {
+//        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/game.fxml"));
+//        Parent root = null;
+//
+//        try {
+//            root = fxmlLoader.load();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        Scene scene = new Scene(root);
+//        primaryStage.setResizable(false);
+//        primaryStage.setTitle("Partners");
+//        primaryStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
+//        primaryStage.setScene(scene);
+//        primaryStage.show();
+//    }
+
+    public void moveTo(Piece piece, Field field) {
+        double x, y;
+        if(field.isEndField()){
+            x = field.getCircle().getCenterX();
+            y = field.getCircle().getCenterY();
+        } else {
+            Point p = field.getNextSpot(piece);
+            if(p == null){
+                return;
+            }
+            x = p.x;
+            y = p.y;
+        }
+
+        if(piece.getCurrentField() != null){
+            piece.getCurrentField().removeFromSpot(piece);
+            piece.setCurrentField(null);
+        }
+
+        piece.setCurrentField(field);
+
+        TranslateTransition translateTransition = new TranslateTransition();
+        translateTransition.setDuration(Duration.millis(1000));
+        translateTransition.setNode(piece.getCircle());
+        translateTransition.setByX(x-piece.getCircle().getCenterX()-piece.getCircle().getTranslateX());
+        translateTransition.setByY(y-piece.getCircle().getCenterY()-piece.getCircle().getTranslateY());
+        translateTransition.setCycleCount(1);
+        translateTransition.setAutoReverse(false);
+        translateTransition.play();
+        piece.getCircle().toFront();
     }
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainMenuView.class.getResource("/game.fxml"));
-        Parent root = fxmlLoader.load();
-
-        Scene scene = new Scene(root);
-        primaryStage.setResizable(false);
-        primaryStage.setTitle("Partners");
-        primaryStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
-        primaryStage.setScene(scene);
-        primaryStage.show();
+    public Piece[] getPieces(){
+        return this.pieces;
     }
 
     public void initialize(){
@@ -94,10 +144,10 @@ public class GameUpdater extends Application {
 
         stackPane.setPrefSize(boardWidth,boardHeight);
 
-        createButton(0);
-        createButton(boardWidth/4);
-        createButton(2*boardWidth/4);
-        createButton(3*boardWidth/4);
+        createButton(0, 0);
+        createButton(boardWidth/4, 1);
+        createButton(2*boardWidth/4, 2);
+        createButton(3*boardWidth/4, 3);
 
         Circle centerButton = new Circle(boardWidth/2, boardWidth/2., 50);
         centerButton.setFill(Paint.valueOf("black"));
@@ -129,12 +179,11 @@ public class GameUpdater extends Application {
             double v = Math.cos(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
             double w = Math.sin(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
             int finalI = i;
-            double xO, yO;
 
             int sizeDec = 5;
 
-            xO = (v*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
-            yO = (w*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+            double xO = (v*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+            double yO = (w*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
 
             double x1 = (v*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
             double y1 = (w*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
@@ -148,68 +197,72 @@ public class GameUpdater extends Application {
             if (numberOfFields == 90) {
                 if (i == 0) {
                     drawEndFields(xI, yI, endFieldRadius, purple, sizeDec, 25, 14);
-                    pieces[0] = drawStartPieces(xO, yO, purple);
+                    drawStartPieces(xO, yO, purple,"purple");
                 } else if (i == 15) {
                     drawEndFields(xI, yI, endFieldRadius, red, sizeDec, 0, 25);
-                    pieces[1] = drawStartPieces(xO, yO, red);
+                    drawStartPieces(xO, yO, red,"red");
                 } else if (i == 30) {
                     drawEndFields(xI, yI, endFieldRadius,orange,sizeDec, -25, 14);
-                    pieces[2] = drawStartPieces(xO, yO, orange);
+                    drawStartPieces(xO, yO, orange,"orange");
                 } else if (i == 45) {
                     drawEndFields(xI, yI, endFieldRadius,yellow,sizeDec, -25, -14);
-                    pieces[3] = drawStartPieces(xO, yO, yellow);
+                    drawStartPieces(xO, yO, yellow,"yellow");
                 } else if (i == 60) {
                     drawEndFields(xI, yI, endFieldRadius,green,sizeDec, 0, -25);
-                    pieces[4] = drawStartPieces(xO, yO, green);
+                    drawStartPieces(xO, yO, green,"green");
                 } else if (i == 75) {
                     drawEndFields(xI, yI, endFieldRadius,blue,sizeDec, 25, -14);
-                    pieces[5] = drawStartPieces(xO, yO, blue);
+                    drawStartPieces(xO, yO, blue,"blue");
                 }
             } else {
                 if (i == 0) {
                     endFields[0] = drawEndFields(xI, yI, endFieldRadius, blue, sizeDec, 25, 25);
-                    pieces[0] = drawStartPieces(xO, yO, blue);
+                    drawStartPieces(xO, yO, blue,"blue");
                 } else if (i == 15) {
                     endFields[1] = drawEndFields(xI, yI, endFieldRadius, red, sizeDec, -25, 25);
-                    pieces[1] = drawStartPieces(xO, yO, red);
+                    drawStartPieces(xO, yO, red,"red");
                 } else if (i == 30) {
                     endFields[2] = drawEndFields(xI, yI, endFieldRadius, yellow, sizeDec, -25, -25);
-                    pieces[2] = drawStartPieces(xO, yO, yellow);
+                    drawStartPieces(xO, yO, yellow, "yellow");
                 } else if (i == 45) {
                     endFields[3] = drawEndFields(xI, yI, endFieldRadius, green, sizeDec, 25, -25);
-                    pieces[3] = drawStartPieces(xO, yO, green);
+                    drawStartPieces(xO, yO, green, "green");
                 }
             }
         }
     }
 
-    private void resetBoard() {
-        for(Piece[] teamPieces: pieces){
-            for(Piece piece: teamPieces){
-                if(piece.getCurrentField() != null){
-                    TranslateTransition translateTransition = new TranslateTransition();
-                    translateTransition.setDuration(Duration.millis(1000));
-                    translateTransition.setNode(piece.getCircle());
-                    translateTransition.setByX(-piece.getCircle().getTranslateX());
-                    translateTransition.setByY(-piece.getCircle().getTranslateY());
-                    translateTransition.setCycleCount(1);
-                    translateTransition.setAutoReverse(false);
-                    translateTransition.play();
-                    piece.getCircle().toFront();
-                    piece.getCurrentField().removeFromSpot(piece);
-                    piece.setCurrentField(null);
-                }
+    public void resetBoard() {
+        for(Piece piece: pieces){
+            if(piece != null && piece.getCurrentField() != null){
+                TranslateTransition translateTransition = new TranslateTransition();
+                translateTransition.setDuration(Duration.millis(1000));
+                translateTransition.setNode(piece.getCircle());
+                translateTransition.setByX(-piece.getCircle().getTranslateX());
+                translateTransition.setByY(-piece.getCircle().getTranslateY());
+                translateTransition.setCycleCount(1);
+                translateTransition.setAutoReverse(false);
+                translateTransition.play();
+                piece.getCircle().toFront();
+                piece.getCurrentField().removeFromSpot(piece);
+                piece.setCurrentField(null);
             }
         }
     }
 
     private void doSomething() {
+        if(selectedPiece == null || selectedField == null || selectedCard == -1){
+            return;
+        }
         double x, y;
         if(selectedField.isEndField()){
             x = selectedField.getCircle().getCenterX();
             y = selectedField.getCircle().getCenterY();
         } else {
             Point p = selectedField.getNextSpot(selectedPiece);
+            if(p == null){
+                return;
+            }
             x = p.x;
             y = p.y;
         }
@@ -218,6 +271,10 @@ public class GameUpdater extends Application {
             selectedPiece.getCurrentField().removeFromSpot(selectedPiece);
             selectedPiece.setCurrentField(null);
         }
+
+        System.out.println(selectedField.getIndex());
+        System.out.println(selectedPiece.getName());
+        System.out.println(selectedCard);
 
         selectedPiece.setCurrentField(selectedField);
 
@@ -256,7 +313,7 @@ public class GameUpdater extends Application {
         return new Field[]{endField1, endField2, endField3, endField4};
     }
 
-    private void createButton(int x){
+    private void createButton(int x, int i){
         Rectangle rectangle1 = new Rectangle();
         rectangle1.setX(x);
         rectangle1.setY(boardWidth);
@@ -264,6 +321,7 @@ public class GameUpdater extends Application {
         rectangle1.setWidth(boardWidth/4);
         rectangle1.setFill(Color.DARKGRAY);
         rectangle1.setStroke(Color.BLACK);
+        rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> selectedCard = i);
         makeDarker(rectangle1);
         pane.getChildren().add(rectangle1);
     }
@@ -277,38 +335,108 @@ public class GameUpdater extends Application {
         shape.setOnMouseExited(mouseEventEventHandler1);
     }
 
-    private Piece drawPiece(double x, double y, Color color){
+    private void drawPiece(double x, double y, Color color, String colorName){
         Piece piece = new Piece();
         Circle pieceC = new Circle(x, y, pieceRadius/2);
         piece.setCircle(pieceC);
-        piece.setName("1"+piece);
+        piece.setName("1"+colorName);
         pieceC.setFill(color);
         pieceC.setStroke(Paint.valueOf("black"));
         pieceC.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedPiece = piece);
         makeDarker(pieceC);
         pieceC.toBack();
         pane.getChildren().add(pieceC);
-        return piece;
+        pieces[pieceIndex] = piece;
+        pieceIndex++;
     }
 
-    private Piece[] drawStartPieces(double x, double y, Color color) {
+    private void drawStartPieces(double x, double y, Color color, String colorName) {
         Circle startField = new Circle(x, y, startFieldRadius/2);
         startField.setFill(color);
         startField.setStroke(Color.BLACK);
         pane.getChildren().add(startField);
 
-        Piece piece1 = drawPiece(x-pieceRadius, y, color);
-        Piece piece2 = drawPiece(x+pieceRadius, y,color);
-        Piece piece3 = drawPiece(x, y-pieceRadius,color);
-        Piece piece4 = drawPiece(x, y+pieceRadius,color);
-
-        return new Piece[]{piece1, piece2, piece3, piece4};
+        drawPiece(x-pieceRadius, y, color, colorName);
+        drawPiece(x+pieceRadius, y,color, colorName);
+        drawPiece(x, y-pieceRadius,color, colorName);
+        drawPiece(x, y+pieceRadius,color, colorName);
     }
 
+    public void setSpace(Space space) {
+        this.space = space;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Field[] getFields() {
+        return this.fields;
+    }
+}
+
+class GameUpdater implements Runnable{
+
+    private Space space;
+    private String username;
+    private GameView gameView;
+
+    public GameUpdater(Space space, String username, GameView gameView){
+
+        this.space = space;
+        this.username = username;
+        this.gameView = gameView;
+    }
+
+    @Override
+    public void run() {
+        Gson gson = new Gson();
+
+        while(true){
+            Object[] gameUpdate = new Object[0];
+            try {
+                gameUpdate = space.get(new ActualField("gameUpdate"), new FormalField(String.class), new FormalField(String.class),
+                        new ActualField(username), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            String type = (String) gameUpdate[1];
+            String actor = (String) gameUpdate[2];
+            Cards[] card = gson.fromJson((String) gameUpdate[4], Cards[].class);
+            int[] pieceIndexes = gson.fromJson((String) gameUpdate[5], int[].class);
+            int[] positions = gson.fromJson((String) gameUpdate[6], int[].class);
+
+            switch (type){
+                case "playerMove":
+                    for(int i = 0; i < pieceIndexes.length; i++){
+                        int finalI = i;
+                        Platform.runLater(
+                                () -> gameView.moveTo(gameView.getPieces()[pieceIndexes[finalI]], gameView.getFields()[positions[finalI]]));
+                    }
+                    break;
+
+                case "switch":
+
+                    break;
+
+                case "hand":
+
+                    break;
+
+                case "getSwitchedCard":
+
+                    break;
+
+                case "resetBoard":
+                    Platform.runLater(
+                            () -> gameView.resetBoard());
+                    break;
+            }
+        }
+    }
 }
 
 class Piece{
-    private double x, y;
     private Circle circle;
     private Field currentField;
     private String name;
@@ -319,22 +447,6 @@ class Piece{
 
     public void setCurrentField(Field currentField) {
         this.currentField = currentField;
-    }
-
-    public double getY() {
-        return y;
-    }
-
-    public void setY(double y) {
-        this.y = y;
-    }
-
-    public double getX() {
-        return x;
-    }
-
-    public void setX(double x) {
-        this.x = x;
     }
 
     public Circle getCircle() {
@@ -364,8 +476,6 @@ class Field{
     private double y1S;
     private double x2S;
     private double y2S;
-
-    private double cIx, cIy, cOx, cOy;
 
     private Path path;
     private Circle circle;
@@ -401,10 +511,10 @@ class Field{
     }
 
     public void setField(double v, double w){
-        cIx = (x1E+x1S)/2;
-        cIy = (y1E+y1S)/2;
-        cOx = (x2E+x2S)/2;
-        cOy = (y2E+y2S)/2;
+        double cIx = (x1E + x1S) / 2;
+        double cIy = (y1E + y1S) / 2;
+        double cOx = (x2E + x2S) / 2;
+        double cOy = (y2E + y2S) / 2;
 
         Point s1 = new Point((int) round((5.9 * cIx + 1.1 * cOx) / 7), (int) round((5.9 * cIy + 1.1 * cOy) / 7));
         Point s2 = new Point((int) round((4.3 * cIx + 2.7 * cOx) / 7), (int) round((4.3 * cIy + 2.7 * cOy) / 7));
@@ -419,27 +529,27 @@ class Field{
 
         if(version == 0) {
             if (index % 4 == 0) {
-                color = GameUpdater.blue;
+                color = GameView.blue;
             } else if (index % 4 == 1) {
-                color = GameUpdater.green;
+                color = GameView.green;
             } else if (index % 4 == 2) {
-                color = GameUpdater.yellow;
+                color = GameView.yellow;
             } else if (index % 4 == 3) {
-                color = GameUpdater.red;
+                color = GameView.red;
             }
         } else {
             if (index <= 7 || index >=83) {
-                color = GameUpdater.purple;
+                color = GameView.purple;
             } else if (index <= 22) {
-                color = GameUpdater.red;
+                color = GameView.red;
             } else if (index <= 37) {
-                color = GameUpdater.orange;
+                color = GameView.orange;
             } else if (index <= 52) {
-                color = GameUpdater.yellow;
+                color = GameView.yellow;
             } else if (index <= 67) {
-                color = GameUpdater.green;
+                color = GameView.green;
             } else {
-                color = GameUpdater.blue;
+                color = GameView.blue;
 
             }
         }
@@ -462,7 +572,7 @@ class Field{
 
         path.fillProperty().setValue(color);
 
-        GameUpdater.makeDarker(path);
+        GameView.makeDarker(path);
 
         pane.getChildren().add(path);
 
@@ -494,38 +604,6 @@ class Field{
         return path;
     }
 
-    public double getX1E() {
-        return x1E;
-    }
-
-    public double getY1E() {
-        return y1E;
-    }
-
-    public double getX2E() {
-        return x2E;
-    }
-
-    public double getY2E() {
-        return y2E;
-    }
-
-    public double getX1S() {
-        return x1S;
-    }
-
-    public double getY1S() {
-        return y1S;
-    }
-
-    public double getX2S() {
-        return x2S;
-    }
-
-    public double getY2S() {
-        return y2S;
-    }
-
     public void setCircle(Circle circle) {
         this.circle = circle;
     }
@@ -542,4 +620,3 @@ class Field{
         isEndField = endField;
     }
 }
-
