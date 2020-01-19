@@ -31,36 +31,36 @@ public class GameUpdater extends Application {
     public Pane pane;
     public Label label;
 
-    public final int boardWidth = 900;
-    public final int buttonHeight = 100;
-    public final int boardHeight = boardWidth+buttonHeight;
+    private final int boardWidth = 900;
+    private final int buttonHeight = 100;
+    private final int boardHeight = boardWidth+buttonHeight;
 
-    public static int numberOfFields;
-    public final int startFieldOffset = 7;
-    public final int version = 1;
+    private static final int version = 1;
+    private static int numberOfFields = 60 + version * 30;
+    private final int startFieldOffset = 7;
 
-    public final int pieceRadius = 15;
-    public final int startFieldRadius = 4*pieceRadius;
-    public final int endFieldRadius = round(2.5f*pieceRadius);
+    private final int pieceRadius = 25;
+    private final int startFieldRadius = 4*pieceRadius;
+    private final int endFieldRadius = round(3f*pieceRadius);
 
-    public final int outerCircleBorderPadding = 150;
-    public final int innerCircleBorderPadding = outerCircleBorderPadding+250;
+    private final int outerCircleBorderPadding = 150;
+    private final int innerCircleBorderPadding = outerCircleBorderPadding+250;
     public Label card4;
     public Label card2;
     public Label card1;
     public Label card3;
-    public Piece[][] pieces = new Piece[4][4];
-    public Field[][] endFields = new Field[4][4];
+    private Piece[][] pieces = new Piece[6][4];
+    private Field[][] endFields = new Field[6][4];
 
-    public Piece selectedPiece = new Piece();
-    public Field selectedField = new Field(pane);
+    private Piece selectedPiece = new Piece();
+    private Field selectedField = new Field(pane);
 
-    public static Color blue = Color.rgb(61,88,222);
-    public static Color purple = Color.rgb(162,19,192);
-    public static Color red = Color.rgb(219,35,35);
-    public static Color orange = Color.rgb(255,149,23);
-    public static Color yellow = Color.rgb(233,227,23);
-    public static Color green  = Color.rgb(24,170,24);
+    static Color blue = Color.rgb(61,88,222);
+    static Color purple = Color.rgb(162,19,192);
+    static Color red = Color.rgb(219,35,35);
+    static Color orange = Color.rgb(255,149,23);
+    static Color yellow = Color.rgb(233,227,23);
+    static Color green  = Color.rgb(24,170,24);
 
     public static void main(String[] args){
         launch(args);
@@ -77,17 +77,10 @@ public class GameUpdater extends Application {
         primaryStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         primaryStage.setScene(scene);
         primaryStage.show();
-
     }
 
     public void initialize(){
         Label[] cards = {card1, card2, card3, card4};
-        if(version == 1){
-            numberOfFields = 90;
-        } else{
-            numberOfFields = 60;
-        }
-        label.setText("Choose a card");
 
         label.setLayoutX(boardWidth/2.-label.getPrefWidth()/2);
         label.setLayoutY(1.2*boardWidth/2.-label.getPrefHeight()/2);
@@ -133,145 +126,61 @@ public class GameUpdater extends Application {
         }
 
         for(int i = 0; i < numberOfFields; i++) {
-            fields[i].setField();
-            int finalI = i;
-            fields[i].getPath().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedField = fields[finalI]);
-            double xO, yO;
-
-            double xI = (fields[i].getX1S() + fields[i].getX1E()) / 2;
-            double yI = (fields[i].getY1S() + fields[i].getY1E()) / 2;
-
-            double x = (fields[i].getX2S() + fields[i].getX2E()) / 2;
-            double y = (fields[i].getY2S() + fields[i].getY2E()) / 2;
-
             double v = Math.cos(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
             double w = Math.sin(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
-
-            double v1 = (int) round(Math.cos(Math.toRadians((i) * 360 / numberOfFields)));
-            double w1 = (int) round(Math.sin(Math.toRadians((i) * 360 / numberOfFields)));
-
-            double ratio1 = abs(v * ((3.5 - v1 * 2.5) / 5) - w1 * w * 2.5 / 5);
-            double ratio2 = abs(w * ((3.5 - w1 * 2.5) / 5) - v1 * v * 2.5 / 5);
-
-            xO = x - (startFieldRadius * ratio1);
-            yO = y - (startFieldRadius * ratio2);
+            int finalI = i;
+            double xO, yO;
 
             int sizeDec = 5;
-            double endFieldDistance1 = 25;
-            double endFieldDistance2 = -25;
 
-            double offsetx1 = v1 * (endFieldRadius / 2.) * abs(v) - w1 * (endFieldRadius / 2.) * abs(w);
-            double offsety1 = w1 * (endFieldRadius / 2.) * abs(w) - v1 * (endFieldRadius / 2.) * abs(v);
+            xO = (v*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+            yO = (w*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+
+            double x1 = (v*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
+            double y1 = (w*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
+
+            double xI = (v*(boardWidth-innerCircleBorderPadding-75)/2)+boardWidth/2.;
+            double yI = (w*(boardWidth-innerCircleBorderPadding-75)/2)+boardWidth/2.;
+
+            fields[i].setField(x1,y1);
+            fields[i].getPath().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedField = fields[finalI]);
 
             if (numberOfFields == 90) {
                 if (i == 0) {
-                    xO = (x - (startFieldRadius / 12.));
-                    yO = (y - (startFieldRadius / 4.));
-
-                    endFieldDistance1 = 25;
-                    endFieldDistance2 = 14;
-
-                    offsetx1 = 5 * endFieldRadius / 12;
-                    offsety1 = endFieldRadius / 4.;
-
-                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, purple, sizeDec, endFieldDistance1, endFieldDistance2);
+                    drawEndFields(xI, yI, endFieldRadius, purple, sizeDec, 25, 14);
                     pieces[0] = drawStartPieces(xO, yO, purple);
                 } else if (i == 15) {
-                    xO = x - (startFieldRadius / 2.);
-                    yO = y;
-
-                    endFieldDistance1 = 0;
-                    endFieldDistance2 = 25;
-
-                    offsetx1 = 0;
-                    offsety1 = endFieldRadius / 2;
-
-                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, red, sizeDec, endFieldDistance1, endFieldDistance2);
+                    drawEndFields(xI, yI, endFieldRadius, red, sizeDec, 0, 25);
                     pieces[1] = drawStartPieces(xO, yO, red);
                 } else if (i == 30) {
-                    xO = x - (11 * startFieldRadius / 12.);
-                    yO = y - startFieldRadius / 4.;
-
-                    endFieldDistance1 = -25;
-                    endFieldDistance2 = 14;
-
-                    offsetx1 = -5 * endFieldRadius / 12;
-                    offsety1 = endFieldRadius / 4.;
-
-                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,orange,sizeDec, endFieldDistance1, endFieldDistance2);
+                    drawEndFields(xI, yI, endFieldRadius,orange,sizeDec, -25, 14);
                     pieces[2] = drawStartPieces(xO, yO, orange);
-
                 } else if (i == 45) {
-                    xO = x - (11 * startFieldRadius / 12.);
-                    yO = y - (3 * startFieldRadius / 4.);
-
-                    endFieldDistance1 = -25;
-                    endFieldDistance2 = -14;
-
-                    offsetx1 = -5* endFieldRadius / 12;
-                    offsety1 = -endFieldRadius / 4;
-
-                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,yellow,sizeDec, endFieldDistance1, endFieldDistance2);
+                    drawEndFields(xI, yI, endFieldRadius,yellow,sizeDec, -25, -14);
                     pieces[3] = drawStartPieces(xO, yO, yellow);
                 } else if (i == 60) {
-                    xO = x - (startFieldRadius / 2.);
-                    yO = y - (startFieldRadius);
-
-                    endFieldDistance1 = 0;
-                    endFieldDistance2 = -25;
-
-                    offsetx1 = 0;
-                    offsety1 = -endFieldRadius / 2;
-
-                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,green,sizeDec, endFieldDistance1, endFieldDistance2);
-                    drawStartPieces(xO, yO, green);
-
+                    drawEndFields(xI, yI, endFieldRadius,green,sizeDec, 0, -25);
+                    pieces[4] = drawStartPieces(xO, yO, green);
                 } else if (i == 75) {
-                    xO = x - (startFieldRadius / 12.);
-                    yO = y - (3 * startFieldRadius / 4.);
-
-                    endFieldDistance1 = 25;
-                    endFieldDistance2 = -14;
-
-                    offsetx1 = 5 * endFieldRadius / 12;
-                    offsety1 = -endFieldRadius / 4.;
-
-                    drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1,blue,sizeDec, endFieldDistance1, endFieldDistance2);
-                    drawStartPieces(xO, yO, blue);
+                    drawEndFields(xI, yI, endFieldRadius,blue,sizeDec, 25, -14);
+                    pieces[5] = drawStartPieces(xO, yO, blue);
                 }
             } else {
                 if (i == 0) {
-                    endFields[0] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsetx1, blue, sizeDec, endFieldDistance1, endFieldDistance1);
+                    endFields[0] = drawEndFields(xI, yI, endFieldRadius, blue, sizeDec, 25, 25);
                     pieces[0] = drawStartPieces(xO, yO, blue);
                 } else if (i == 15) {
-                    endFields[1] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, red, sizeDec, endFieldDistance2, endFieldDistance1);
+                    endFields[1] = drawEndFields(xI, yI, endFieldRadius, red, sizeDec, -25, 25);
                     pieces[1] = drawStartPieces(xO, yO, red);
                 } else if (i == 30) {
-                    endFields[2] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsetx1, yellow, sizeDec, endFieldDistance2, endFieldDistance2);
+                    endFields[2] = drawEndFields(xI, yI, endFieldRadius, yellow, sizeDec, -25, -25);
                     pieces[2] = drawStartPieces(xO, yO, yellow);
                 } else if (i == 45) {
-                    endFields[3] = drawEndFields(xI, yI, endFieldRadius, offsetx1, offsety1, green, sizeDec, endFieldDistance1, endFieldDistance2);
+                    endFields[3] = drawEndFields(xI, yI, endFieldRadius, green, sizeDec, 25, -25);
                     pieces[3] = drawStartPieces(xO, yO, green);
                 }
             }
         }
-
-
-        Line line = new Line();
-        line.setStartX(0);
-        line.setStartY(0);
-        line.setEndX(boardWidth);
-        line.setEndY(boardWidth);
-        line.toFront();
-        pane.getChildren().add(line);
-
-        line = new Line();
-        line.setStartX(0);
-        line.setStartY(boardWidth);
-        line.setEndX(boardWidth);
-        line.setEndY(0);
-        line.toFront();
-        pane.getChildren().add(line);
     }
 
     private void resetBoard() {
@@ -337,28 +246,17 @@ public class GameUpdater extends Application {
         return field1;
     }
 
-    private Field[] drawEndFields(double xI, double yI, int width1, double offsetx1, double offsety1, Color color, int sizeDec, double endFieldDistance2, double endFieldDistance1) {
-        int width2 = width1 - sizeDec;
-        int width3 = width2 - sizeDec;
-        int width4 = width3 - sizeDec;
+    private Field[] drawEndFields(double xI, double yI, int width1, Color color, int sizeDec, double endFieldDistance1, double endFieldDistance2) {
 
-        double offsetx2 = offsetx1 + endFieldDistance2;
-        double offsetx3 = offsetx2 + endFieldDistance2;
-        double offsetx4 = offsetx3 + endFieldDistance2;
-
-        double offsety2 = offsety1 + endFieldDistance1;
-        double offsety3 = offsety2 + endFieldDistance1;
-        double offsety4 = offsety3 + endFieldDistance1;
-
-        Field endField1 = drawEndField(xI-offsetx1, yI-offsety1, width1/2, color);
-        Field endField2 = drawEndField(xI-offsetx2, yI-offsety2, width2/2, color);
-        Field endField3 = drawEndField(xI-offsetx3, yI-offsety3, width3/2, color);
-        Field endField4 = drawEndField(xI-offsetx4, yI-offsety4, width4/2, color);
+        Field endField1 = drawEndField(xI, yI, width1/2, color);
+        Field endField2 = drawEndField(xI - endFieldDistance1, yI - endFieldDistance2, (width1-sizeDec)/2, color);
+        Field endField3 = drawEndField(xI - endFieldDistance1*2, yI - endFieldDistance2*2, (width1-sizeDec*2)/2, color);
+        Field endField4 = drawEndField(xI - endFieldDistance1*3, yI - endFieldDistance2*3, (width1-sizeDec*3)/2, color);
 
         return new Field[]{endField1, endField2, endField3, endField4};
     }
 
-    public void createButton(int x){
+    private void createButton(int x){
         Rectangle rectangle1 = new Rectangle();
         rectangle1.setX(x);
         rectangle1.setY(boardWidth);
@@ -370,7 +268,7 @@ public class GameUpdater extends Application {
         pane.getChildren().add(rectangle1);
     }
 
-    public static void makeDarker(Shape shape){
+    static void makeDarker(Shape shape){
         EventHandler<MouseEvent> mouseEventEventHandler = e -> shape.fillProperty().setValue(((Color) shape.getFill()).darker());
         EventHandler<MouseEvent> mouseEventEventHandler1 = e -> shape.fillProperty().setValue(((Color) shape.getFill()).brighter());
         shape.setOnMouseEntered(mouseEventEventHandler);
@@ -394,15 +292,15 @@ public class GameUpdater extends Application {
     }
 
     private Piece[] drawStartPieces(double x, double y, Color color) {
-        Circle startField = new Circle(x+startFieldRadius/2., y+startFieldRadius/2., startFieldRadius/2);
+        Circle startField = new Circle(x, y, startFieldRadius/2);
         startField.setFill(color);
         startField.setStroke(Color.BLACK);
         pane.getChildren().add(startField);
 
-        Piece piece1 = drawPiece(x+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., y+startFieldRadius-(pieceRadius*1.5)+pieceRadius/2., color);
-        Piece piece2 = drawPiece(x+(startFieldRadius-pieceRadius)/2.+pieceRadius/2., y+pieceRadius/2.+pieceRadius/2.,color);
-        Piece piece3 = drawPiece(x+startFieldRadius-(pieceRadius*1.5)+pieceRadius/2., y+(startFieldRadius-pieceRadius)/2.+pieceRadius/2.,color);
-        Piece piece4 = drawPiece(x+pieceRadius/2.+pieceRadius/2., y+(startFieldRadius-pieceRadius)/2.+pieceRadius/2.,color);
+        Piece piece1 = drawPiece(x-pieceRadius, y, color);
+        Piece piece2 = drawPiece(x+pieceRadius, y,color);
+        Piece piece3 = drawPiece(x, y-pieceRadius,color);
+        Piece piece4 = drawPiece(x, y+pieceRadius,color);
 
         return new Piece[]{piece1, piece2, piece3, piece4};
     }
@@ -502,7 +400,7 @@ class Field{
         this.version = version;
     }
 
-    public void setField(){
+    public void setField(double v, double w){
         cIx = (x1E+x1S)/2;
         cIy = (y1E+y1S)/2;
         cOx = (x2E+x2S)/2;
@@ -550,8 +448,10 @@ class Field{
         LineTo line1 = new LineTo(x2S, y2S);
 //        LineTo line2 = new LineTo(x2E, y2E);
         QuadCurveTo quadTo = new QuadCurveTo();
-        quadTo.setControlX((cOx));
-        quadTo.setControlY((cOy));
+
+        quadTo.setControlX(v);
+        quadTo.setControlY(w);
+
         quadTo.setX(x2E);
         quadTo.setY(y2E);
 
