@@ -5,27 +5,26 @@ import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.jspace.RemoteSpace;
+import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
+import java.util.List;
 
 import static Lobby.Templates.*;
 
 public class LobbyController {
 
-    private static LobbyUpdater lobbyUpdater;
     public Label URIField;
     public Label team1Player1Field, team1Player2Field, team1Player3Field;
     public Label team2Player1Field, team2Player2Field, team2Player3Field;
@@ -41,7 +40,7 @@ public class LobbyController {
     private Button[] joinTeamButtons;
     private Label[][] teamLabels;
 
-    private boolean isHost;
+    private static LobbyUpdater lobbyUpdater;
     private SetupGameController setupGameController;
     private ConnectToGameController connectToGameController;
     private LobbyModel lobbyModel;
@@ -49,6 +48,10 @@ public class LobbyController {
     private Thread lobbyUpdaterThread;
     private RemoteSpace game;
     private static Stage lobbyStage;
+    private Gson gson = new Gson();
+
+    private boolean isHost;
+    private int numberOfTeams;
 
     public void initialize() {
         sp.setContent(chatBox);
@@ -80,12 +83,10 @@ public class LobbyController {
         username = lobbyModel.getUsername();
 
         int version;
-        int numberOfTeams;
         String host;
 
         //Connect to lobby
         game = new RemoteSpace(URI);
-        Gson gson = new Gson();
         game.put("lobbyRequest", "connect", username, 0, "");
 
         Object[] ack = game.get(connectToGameAck(username));
@@ -121,9 +122,7 @@ public class LobbyController {
                 }
             }
 
-            //TODO: Only pass controller to updater
-            lobbyUpdater = new LobbyUpdater(game, username, playerFields, teamLabels, joinTeamButtons, cancelButton, numberOfTeams,
-                    lobbyStage, chatBox, this);
+            lobbyUpdater = new LobbyUpdater(this);
             lobbyUpdaterThread = new Thread(lobbyUpdater);
             lobbyUpdaterThread.setDaemon(true);
             lobbyUpdaterThread.start();
@@ -152,6 +151,24 @@ public class LobbyController {
 
     public void startGame(){
         lobbyStage.close();
+
+        Object[] lobbyInfoJson = new Object[0];
+        try {
+            lobbyInfoJson = game.get(lobbyInfo(username));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        String[] lobbyInfo = gson.fromJson((String) lobbyInfoJson[2], String[].class);
+
+        String[] users = gson.fromJson(lobbyInfo[0], String[].class);
+        int[] teams = gson.fromJson(lobbyInfo[1], int[].class);
+        int version = gson.fromJson(lobbyInfo[2], int.class);
+        int numberOfTeams = gson.fromJson(lobbyInfo[3], int.class);
+        String host = gson.fromJson(lobbyInfo[4], String.class);
+
+        lobbyUpdater.stop();
+        lobbyUpdaterThread.interrupt();
+
         Stage stage = new Stage();
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/game.fxml"));
         Parent root = null;
@@ -162,9 +179,17 @@ public class LobbyController {
             e.printStackTrace();
         }
 
+        Space user = new SequentialSpace();
         GameView gameView = fxmlLoader.getController();
+        gameView.setUserSpace(user);
+        gameView.setHost(host);
+        gameView.setUsers(users);
+        gameView.setTeams(teams);
+        gameView.setVersion(version);
+        gameView.setNumberOfTeams(numberOfTeams);
         gameView.setSpace(game);
         gameView.setUsername(username);
+        gameView.setup();
 
         Scene scene = new Scene(root);
         stage.setResizable(false);
@@ -173,7 +198,7 @@ public class LobbyController {
         stage.setScene(scene);
         stage.show();
 
-        GameUpdater gameUpdater = new GameUpdater(game, username, gameView);
+        GameUpdater gameUpdater = new GameUpdater(game, user, username, gameView);
         new Thread(gameUpdater).start();
     }
 
@@ -293,34 +318,46 @@ public class LobbyController {
     void setHost(boolean host) {
         isHost = host;
     }
+
+    public Space getSpace() {
+        return this.game;
+    }
+
+    public String getUsername() {
+        return this.username;
+    }
+
+    public VBox getChatBox() {
+        return this.chatBox;
+    }
+
+    public Button getCancelButton() {
+        return this.cancelButton;
+    }
+
+    public Label[][] getTeams() {
+        return teamLabels;
+    }
+
+    public int getNumberOfTeams() {
+        return numberOfTeams;
+    }
+
+    public Button[] getJoinTeamButtons() {
+        return this.joinTeamButtons;
+    }
+
+    public Label[] getPlayerFields() {
+        return playerFields;
+    }
 }
 
 class LobbyUpdater implements Runnable {
 
-    private String username;
-    private Label[] playerFields;
-    private Label[][] teams;
-    private Button[] joinTeamButtons;
-    private Button cancelButton;
-    private int numberOfTeams;
-    private Stage lobbyStage;
-    private VBox chatBox;
     private LobbyController lobbyController;
-    private Space space;
     private volatile boolean exit;
 
-    LobbyUpdater(Space space, String username, Label[] playerFields, Label[][] teams,
-                 Button[] joinTeamButtons, Button cancelButton, int numberOfTeams,
-                 Stage lobbyStage, VBox chatBox, LobbyController lobbyController) {
-        this.space = space;
-        this.username = username;
-        this.playerFields = playerFields;
-        this.teams = teams;
-        this.joinTeamButtons = joinTeamButtons;
-        this.cancelButton = cancelButton;
-        this.numberOfTeams = numberOfTeams;
-        this.lobbyStage = lobbyStage;
-        this.chatBox = chatBox;
+    LobbyUpdater(LobbyController lobbyController) {
         this.lobbyController = lobbyController;
     }
 
@@ -328,7 +365,7 @@ class LobbyUpdater implements Runnable {
         try {
             while (!exit) {
 
-                Object[] lobbyUpdate = space.get(lobbyUpdate(username));
+                Object[] lobbyUpdate = lobbyController.getSpace().get(lobbyUpdate(lobbyController.getUsername()));
                 String type = (String) lobbyUpdate[1];
                 String actor = (String) lobbyUpdate[2];
                 String info = (String) lobbyUpdate[5];
@@ -342,45 +379,43 @@ class LobbyUpdater implements Runnable {
                                                 Label label = new Label(infoF.substring(0, 35));
                                                 label.setAlignment(Pos.CENTER_RIGHT);
 
-                                                chatBox.getChildren().add(label);
+                                                lobbyController.getChatBox().getChildren().add(label);
                                                 infoF = infoF.substring(35);
                                             }
 
                                         Label label = new Label(infoF);
                                         label.setAlignment(Pos.CENTER_RIGHT);
 
-                                        chatBox.getChildren().add(label);
+                                        lobbyController.getChatBox().getChildren().add(label);
                                 });
 
                         break;
 
                     case "disconnected":
                         //This user has lost connection
-                        if (actor.matches(username)) {
-                            Platform.runLater(
-                                    () -> { cancelButton.fire();
-                            });
+                        if (actor.matches(lobbyController.getUsername())) {
+                            Platform.runLater(() -> lobbyController.getCancelButton().fire());
                         } else {
 
                             //Another user has lost connection
                             Platform.runLater(
                                     () -> {
                                         //Remove username from teams and connected user
-                                        for (Label[] team : teams) {
+                                        for (Label[] team : lobbyController.getTeams()) {
                                             for (Label playerField : team) {
                                                 if (playerField.getText().matches(actor)) {
                                                     playerField.setText("");
-                                                    if (username.matches(actor)) {
-                                                        for (int i = 0; i < numberOfTeams; i++) {
-                                                            joinTeamButtons[i].setDisable(false);
-                                                            joinTeamButtons[i].setText("Join");
+                                                    if (lobbyController.getUsername().matches(actor)) {
+                                                        for (int i = 0; i < lobbyController.getNumberOfTeams(); i++) {
+                                                            lobbyController.getJoinTeamButtons()[i].setDisable(false);
+                                                            lobbyController.getJoinTeamButtons()[i].setText("Join");
                                                         }
                                                     }
                                                     break;
                                                 }
                                             }
                                         }
-                                        for (Label playerField : playerFields) {
+                                        for (Label playerField : lobbyController.getPlayerFields()) {
                                             if (playerField.getText().matches(actor)) {
                                                 playerField.setText("");
                                                 break;
@@ -396,8 +431,8 @@ class LobbyUpdater implements Runnable {
                         Platform.runLater(
                                 () -> {
                                     //Update labels
-                                    for (Label playerField : playerFields) {
-                                        if (playerField.getText().matches("") && !actor.matches(username)) {
+                                    for (Label playerField : lobbyController.getPlayerFields()) {
+                                        if (playerField.getText().matches("") && !actor.matches(lobbyController.getUsername())) {
                                             playerField.setText(actor);
                                             break;
                                         }
@@ -407,7 +442,7 @@ class LobbyUpdater implements Runnable {
                         break;
                     case "joinedTeam":
                         int teamN = (Integer) lobbyUpdate[4] - 1;
-                        Label[] teamJoin = teams[teamN];
+                        Label[] teamJoin = lobbyController.getTeams()[teamN];
                         for (int i = 0; i < 3; i++) {
                             if (teamJoin[i].getText().matches("")) {
                                 //Can't update field from a non-javafx thread
@@ -415,12 +450,12 @@ class LobbyUpdater implements Runnable {
                                 Platform.runLater(
                                         () -> {
                                             teamJoin[finalI].setText(actor);
-                                            if (username.matches(actor)) {
+                                            if (lobbyController.getUsername().matches(actor)) {
                                                 for (int j = 0; j < 3; j++) {
                                                     if (j != teamN) {
-                                                        joinTeamButtons[j].setDisable(true);
+                                                        lobbyController.getJoinTeamButtons()[j].setDisable(true);
                                                     } else {
-                                                        joinTeamButtons[j].setText("Leave");
+                                                        lobbyController.getJoinTeamButtons()[j].setText("Leave");
                                                     }
                                                 }
                                             }
@@ -431,16 +466,16 @@ class LobbyUpdater implements Runnable {
                         }
                         break;
                     case "leftTeam":
-                        for (Label[] team : teams) {
+                        for (Label[] team : lobbyController.getTeams()) {
                             for (Label playerField : team) {
                                 if (playerField.getText().matches(actor)) {
                                     Platform.runLater(
                                             () -> {
                                                 playerField.setText("");
-                                                if (username.matches(actor)) {
-                                                    for (int i = 0; i < numberOfTeams; i++) {
-                                                        joinTeamButtons[i].setDisable(false);
-                                                        joinTeamButtons[i].setText("Join");
+                                                if (lobbyController.getUsername().matches(actor)) {
+                                                    for (int i = 0; i < lobbyController.getNumberOfTeams(); i++) {
+                                                        lobbyController.getJoinTeamButtons()[i].setDisable(false);
+                                                        lobbyController.getJoinTeamButtons()[i].setText("Join");
                                                     }
                                                 }
                                             }

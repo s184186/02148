@@ -8,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 
 public class ConnectToGameController {
@@ -16,6 +15,7 @@ public class ConnectToGameController {
     public Label connectionFailedLabel;
     public Button playButton;
     public TextField usernameField, URIField;
+
     private LobbyModel lobbyModel = new LobbyModel();
     private Stage lobbyStage;
     private MainMenuController mainMenuController;
