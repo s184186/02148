@@ -19,7 +19,6 @@ public class MainMenuView extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-
         mainMenuStage = stage;
 
         FXMLLoader fxmlLoader = new FXMLLoader(MainMenuView.class.getResource("/MainMenu.fxml"));

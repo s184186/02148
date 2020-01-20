@@ -65,7 +65,7 @@ public class GameView{
     static Color orange = Color.rgb(255,149,23);
     static Color yellow = Color.rgb(233,227,23);
     static Color green  = Color.rgb(24,170,24);
-    private Space space;
+    private Space gameSpace;
     private String username;
     private Space userSpace;
     private Cards[] hand;
@@ -74,15 +74,7 @@ public class GameView{
     private int[] teams;
     private int numberOfTeams;
 
-    public void setup(){
-        if(version == 0){
-            colorNames = new String[]{"blue", "red", "yellow", "green"};
-            colors = new Color[]{blue, red, yellow, green};
-        } else {
-            colorNames = new String[]{"purple", "red", "orange", "yellow", "green", "blue"};
-            colors = new Color[]{purple, red, orange, yellow, green, blue};
-        }
-        numberOfFields = 60 + version * 30;
+    public void initialize(){
         Label[] cards = {card1, card2, card3, card4};
 
         label.setLayoutX(boardWidth/2.-label.getPrefWidth()/2);
@@ -106,6 +98,17 @@ public class GameView{
         centerButton.setFill(Paint.valueOf("black"));
         centerButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> confirmMove());
         pane.getChildren().add(centerButton);
+    }
+
+    public void setup(){
+        if(version == 0){
+            colorNames = new String[]{"blue", "red", "yellow", "green"};
+            colors = new Color[]{blue, red, yellow, green};
+        } else {
+            colorNames = new String[]{"purple", "red", "orange", "yellow", "green", "blue"};
+            colors = new Color[]{purple, red, orange, yellow, green, blue};
+        }
+        numberOfFields = 60 + version * 30;
 
         fields = new Field[numberOfFields];
         for(int i = 0; i < numberOfFields; i++){
@@ -146,6 +149,8 @@ public class GameView{
                 drawStartPieces(xO, yO, colors[n],colorNames[n]);
             }
         }
+        GameUpdater gameUpdater = new GameUpdater(gameSpace, userSpace, username, this);
+        new Thread(gameUpdater).start();
     }
 
     public void moveTo(Piece piece, Field field) {
@@ -285,8 +290,8 @@ public class GameView{
         drawPiece(x, y+pieceRadius,color, colorName);
     }
 
-    public void setSpace(Space space) {
-        this.space = space;
+    public void setGameSpace(Space gameSpace) {
+        this.gameSpace = gameSpace;
     }
 
     public void setUsername(String username) {
@@ -325,7 +330,7 @@ public class GameView{
         return selectedPiece;
     }
 
-    public void setHost(String host) {
+    public void setHostName(String host) {
         this.host = host;
     }
 

@@ -1,11 +1,9 @@
 package Lobby;
 
-import Model.Game;
 import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -14,29 +12,26 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.jspace.RemoteSpace;
-import org.jspace.SequentialSpace;
-import org.jspace.Space;
+import org.jspace.*;
 
 import java.io.IOException;
-import java.util.List;
 
 import static Lobby.Templates.*;
 
 public class LobbyController {
 
-    public Label URIField;
-    public Label team1Player1Field, team1Player2Field, team1Player3Field;
-    public Label team2Player1Field, team2Player2Field, team2Player3Field;
-    public Label team3Player1Field, team3Player2Field, team3Player3Field;
-    public Label hostNameField, versionField, numberOfTeamsField;
-    public Label player1Field, player2Field, player3Field, player4Field, player5Field, player6Field;
+    public Label URILabel;
+    public Label team1Player1Label, team1Player2Label, team1Player3Label;
+    public Label team2Player1Label, team2Player2Label, team2Player3Label;
+    public Label team3Player1Label, team3Player2Label, team3Player3Label;
+    public Label hostNameLabel, versionLabel, numberOfTeamsLabel;
+    public Label player1Label, player2Label, player3Label, player4Label, player5Label, player6Label;
     public Button joinTeam1Button, joinTeam2Button, joinTeam3Button, playButton, cancelButton;
     public TextField textField;
     public VBox chatBox;
     public ScrollPane sp;
 
-    private Label[] playerFields;
+    private Label[] playerLabels;
     private Button[] joinTeamButtons;
     private Label[][] teamLabels;
 
@@ -57,14 +52,14 @@ public class LobbyController {
         sp.setContent(chatBox);
         sp.vvalueProperty().bind(chatBox.heightProperty());
 
-        Label[] team1 = new Label[]{team1Player1Field, team1Player2Field, team1Player3Field};
-        Label[] team2 = new Label[]{team2Player1Field, team2Player2Field, team2Player3Field};
-        Label[] team3 = new Label[]{team3Player1Field, team3Player2Field, team3Player3Field};
+        Label[] team1 = new Label[]{team1Player1Label, team1Player2Label, team1Player3Label};
+        Label[] team2 = new Label[]{team2Player1Label, team2Player2Label, team2Player3Label};
+        Label[] team3 = new Label[]{team3Player1Label, team3Player2Label, team3Player3Label};
         teamLabels = new Label[][]{team1, team2, team3};
 
         joinTeamButtons = new Button[]{joinTeam1Button, joinTeam2Button, joinTeam3Button};
 
-        playerFields = new Label[]{player1Field, player2Field, player3Field, player4Field, player5Field, player6Field};
+        playerLabels = new Label[]{player1Label, player2Label, player3Label, player4Label, player5Label, player6Label};
     }
 
     boolean setup() throws IOException, InterruptedException {
@@ -105,7 +100,7 @@ public class LobbyController {
 
             for (int i = 0; i < users.length; i++) {
 
-                playerFields[i].setText(users[i]);
+                playerLabels[i].setText(users[i]);
                 int teamN = teams[i];
 
                 if (teamN != 0) {
@@ -132,7 +127,7 @@ public class LobbyController {
         }
 
         //Set lobby text
-        hostNameField.setText(host);
+        hostNameLabel.setText(host);
         String versionText = "Normal";
 
         if (version == 1) {
@@ -143,9 +138,9 @@ public class LobbyController {
             joinTeam3Button.setDisable(true);
         }
 
-        versionField.setText(versionText);
-        numberOfTeamsField.setText(String.valueOf(numberOfTeams));
-        URIField.setText(ip);
+        versionLabel.setText(versionText);
+        numberOfTeamsLabel.setText(String.valueOf(numberOfTeams));
+        URILabel.setText(ip);
         return true;
     }
 
@@ -179,15 +174,15 @@ public class LobbyController {
             e.printStackTrace();
         }
 
-        Space user = new SequentialSpace();
+        Space userSpace = new SequentialSpace();
         GameView gameView = fxmlLoader.getController();
-        gameView.setUserSpace(user);
-        gameView.setHost(host);
+        gameView.setUserSpace(userSpace);
+        gameView.setHostName(host);
         gameView.setUsers(users);
         gameView.setTeams(teams);
         gameView.setVersion(version);
         gameView.setNumberOfTeams(numberOfTeams);
-        gameView.setSpace(game);
+        gameView.setGameSpace(game);
         gameView.setUsername(username);
         gameView.setup();
 
@@ -197,9 +192,6 @@ public class LobbyController {
         stage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         stage.setScene(scene);
         stage.show();
-
-        GameUpdater gameUpdater = new GameUpdater(game, user, username, gameView);
-        new Thread(gameUpdater).start();
     }
 
     public void shutdown(){
@@ -224,6 +216,10 @@ public class LobbyController {
     public void handlePlay() throws InterruptedException {
         if (isHost) {
             game.put("lobbyRequest", "startGame", username, 0, "");
+            String resp = (String) game.get(new ActualField("lobbyUpdate"), new ActualField("startGameAck"),new FormalField(String.class), new ActualField(username), new FormalField(String.class))[4];
+            if(resp.matches("ko")){
+                System.out.println("Unable to start game");
+            }
         }
     }
 
@@ -348,7 +344,7 @@ public class LobbyController {
     }
 
     public Label[] getPlayerFields() {
-        return playerFields;
+        return playerLabels;
     }
 }
 

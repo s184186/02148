@@ -10,18 +10,16 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 import org.jspace.SequentialSpace;
-
 import java.io.IOException;
-
 import static Lobby.Templates.IPPort;
 
 public class SetupGameController {
 
     public Button playButton;
-    public RadioButton toggle3;
-    public RadioButton toggle2;
+    public RadioButton toggle2,toggle3;
     public ToggleGroup versionToggleGroup, teamNumberToggleGroup;
     public TextField usernameField;
+
     private MainMenuController mainMenuController;
     private LobbyModel lobbyModel;
     private Stage lobbyStage;

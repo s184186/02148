@@ -7,16 +7,16 @@
 <VBox xmlns:fx="http://javafx.com/fxml/1" alignment="CENTER" style="-fx-background-color: rgb(170,204,102);"
       xmlns="http://javafx.com/javafx/10.0.1" fx:controller="Lobby.MainMenuController">
     <children>
-        <Button fx:id="hostGame" mnemonicParsing="false" onAction="#handleHostGame" prefHeight="166.0" prefWidth="500.0"
+        <Button fx:id="hostGameButton" mnemonicParsing="false" onAction="#handleHostGame" prefHeight="166.0" prefWidth="500.0"
                 style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);" text="Host game">
             <font>
                 <Font name="Courier New" size="38.0" fx:id="x1"/>
             </font>
         </Button>
-        <Button fx:id="connectGame" font="$x1" mnemonicParsing="false" onAction="#handleConnectGame" prefHeight="166.0"
+        <Button fx:id="connectToGameButton" font="$x1" mnemonicParsing="false" onAction="#handleConnectGame" prefHeight="166.0"
                 prefWidth="500.0" style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);"
                 text="Connect to game"/>
-        <Button fx:id="exitGame" font="$x1" mnemonicParsing="false" onAction="#handleExit" prefHeight="166.0"
+        <Button fx:id="exitGameButton" font="$x1" mnemonicParsing="false" onAction="#handleExit" prefHeight="166.0"
                 prefWidth="500.0" style="-fx-background-radius: 10px; -fx-background-color: rgb(170,204,102);"
                 text="Exit game"/>
     </children>

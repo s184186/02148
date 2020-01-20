@@ -26,12 +26,12 @@
                               </VBox>
                               <VBox id="VBox" alignment="CENTER_LEFT" layoutX="47.0" layoutY="0.0" prefHeight="81.0" prefWidth="161.0" spacing="5.0">
                                   <children>
-                                      <Label fx:id="hostNameField" prefWidth="166.0" text="">
+                                      <Label fx:id="hostNameLabel" prefWidth="166.0" text="">
                                           <VBox.margin>
                                               <Insets left="5.0" fx:id="x2" />
                                           </VBox.margin>
                                       </Label>
-                                      <Label fx:id="URIField" prefWidth="166.0" text="" VBox.margin="$x2" />
+                                      <Label fx:id="URILabel" prefWidth="166.0" text="" VBox.margin="$x2" />
                                   </children>
                               </VBox>
                           </children>
@@ -46,8 +46,8 @@
                               </VBox>
                               <VBox id="VBox" alignment="CENTER_LEFT" layoutX="62.0" layoutY="-1.0" prefHeight="80.99990000000253" prefWidth="150.0" spacing="5.0">
                                   <children>
-                                      <Label fx:id="versionField" prefWidth="150.0" text="" />
-                                      <Label fx:id="numberOfTeamsField" prefWidth="150.0" text="" />
+                                      <Label fx:id="versionLabel" prefWidth="150.0" text="" />
+                                      <Label fx:id="numberOfTeamsLabel" prefWidth="150.0" text="" />
                                   </children>
                               </VBox>
                           </children>
@@ -66,9 +66,9 @@
                               </HBox>
                               <VBox id="VBox" alignment="CENTER" layoutX="0.0" layoutY="33.0" prefHeight="106.0" prefWidth="149.99997792968497" spacing="5.0">
                                   <children>
-                                      <Label fx:id="team1Player1Field" text="" />
-                                      <Label fx:id="team1Player2Field" text="" />
-                                      <Label fx:id="team1Player3Field" text="" />
+                                      <Label fx:id="team1Player1Label" text="" />
+                                      <Label fx:id="team1Player2Label" text="" />
+                                      <Label fx:id="team1Player3Label" text="" />
                                   </children>
                               </VBox>
                           </children>
@@ -83,9 +83,9 @@
                               </HBox>
                               <VBox id="VBox" alignment="CENTER" layoutX="8.0" layoutY="33.0" prefHeight="106.0" prefWidth="136.99990000000253" spacing="5.0">
                                   <children>
-                                      <Label fx:id="team2Player1Field" text="" />
-                                      <Label fx:id="team2Player2Field" text="" />
-                                      <Label fx:id="team2Player3Field" text="" />
+                                      <Label fx:id="team2Player1Label" text="" />
+                                      <Label fx:id="team2Player2Label" text="" />
+                                      <Label fx:id="team2Player3Label" text="" />
                                   </children>
                               </VBox>
                           </children>
@@ -100,9 +100,9 @@
                               </HBox>
                               <VBox id="VBox" alignment="CENTER" layoutX="3.0" layoutY="33.0" minHeight="55.0" prefHeight="105.99996948242188" prefWidth="137.00009999999747" spacing="5.0">
                                   <children>
-                                      <Label fx:id="team3Player1Field" text="" />
-                                      <Label fx:id="team3Player2Field" text="" />
-                                      <Label fx:id="team3Player3Field" text="" />
+                                      <Label fx:id="team3Player1Label" text="" />
+                                      <Label fx:id="team3Player2Label" text="" />
+                                      <Label fx:id="team3Player3Label" text="" />
                                   </children>
                               </VBox>
                           </children>
@@ -113,12 +113,12 @@
                   <children>
                       <VBox alignment="CENTER" prefHeight="81.0" prefWidth="150.0">
                           <children>
-                              <Label fx:id="player1Field" alignment="CENTER" text="">
+                              <Label fx:id="player1Label" alignment="CENTER" text="">
                                   <VBox.margin>
                                       <Insets top="30.0" fx:id="x1" />
                                   </VBox.margin>
                               </Label>
-                              <Label fx:id="player4Field" text="" />
+                              <Label fx:id="player4Label" text="" />
                           </children>
                       </VBox>
                       <VBox alignment="CENTER" prefHeight="200.0" prefWidth="150.0">
@@ -128,14 +128,14 @@
                                       <Insets bottom="10.0" />
                                   </VBox.margin>
                               </Label>
-                              <Label fx:id="player2Field" text="" />
-                              <Label fx:id="player5Field" text="" />
+                              <Label fx:id="player2Label" text="" />
+                              <Label fx:id="player5Label" text="" />
                           </children>
                       </VBox>
                       <VBox alignment="CENTER" prefHeight="200.0" prefWidth="150.0">
                           <children>
-                              <Label fx:id="player3Field" text="" VBox.margin="$x1" />
-                              <Label fx:id="player6Field" text="" />
+                              <Label fx:id="player3Label" text="" VBox.margin="$x1" />
+                              <Label fx:id="player6Label" text="" />
                           </children>
                       </VBox>
                   </children>
