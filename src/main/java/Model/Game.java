@@ -5,6 +5,7 @@ import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.Space;
 
+import javax.smartcardio.Card;
 import java.util.*;
 
 import static Model.Cards.*;
@@ -52,6 +53,7 @@ public class Game implements Runnable {
         this.version = version;
         this.finished = new boolean[noOfPlayers];
         this.justStarted = true;
+        this.playerHands= new Cards[noOfPlayers][5];
     }
 
     @Override
@@ -112,7 +114,7 @@ public class Game implements Runnable {
     }
 
     private void shuffleCards(Object[] users) throws InterruptedException { //Cards are shuffled and handed out to users and the player to start is chosen
-        if (getCardsLeftInDeck() < noOfPlayers * 4) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
+        if (getCardsLeftInDeck() < noOfPlayers * 4 || deck==null) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
             setupDeck();
         }
         Cards[] hand = new Cards[4];
@@ -149,17 +151,13 @@ public class Game implements Runnable {
         }
         return cardsleft;
     }
-
+    // update playerHands
     private void switchCards(Object[] switchInfo) throws InterruptedException {
-        String from = (String) switchInfo[0];
-        String to = (String) switchInfo[1];
-        Cards card = (Cards) switchInfo[2];
-        //TODO: put
-        game.put(to, card);
-        //server tells users to mix cards
-        //server tells user with username 'to' to add 'card' to his deck.
+        Cards card = (Cards) switchInfo[3];
+        String username = (String) switchInfo[2];
+        int index = getPlayerIndexToTheLeftOfUsername(username);
+        playerHands[index][4] = card;
     }
-
     private String calculateMove(Object[] potentialMove) throws InterruptedException {
         int homefieldPos = -1;
 
@@ -636,5 +634,19 @@ public class Game implements Runnable {
         if (version == 0) return 60 + homePos / 15 * 4;
         if (version == 1) return 90 + homePos / 15 * 4;
         return -1;
+    }
+    private int getPlayerIndexToTheLeftOfUsername(String username){
+        ArrayList<Player> teamtmp = getTeamByUsername(username);
+        int index =teamtmp.indexOf(username);
+        int targetIndex = (index+1) % teamtmp.size();
+        String usernameToTheLeft = teamtmp.get(targetIndex).getUsername();
+        return getIndexByUsername(usernameToTheLeft);
+    }
+    private int getIndexByUsername(String username){
+        int index=-1;
+        for(int i=0; i<noOfPlayers; i++){
+            if(users[i].matches(username)) index=i;
+        }
+        return index;
     }
 }
