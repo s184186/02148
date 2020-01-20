@@ -63,7 +63,7 @@ public class Game implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        while (true) {
+        while (true) { //while winningTeam!=-1
             try {
                 if (winningTeam != -1) break;
                 if (game.getp(new ActualField("need cards")) != null)
@@ -148,7 +148,7 @@ public class Game implements Runnable {
         //server tells user with username 'to' to add 'card' to his deck.
     }
 
-    private void calculateMove(Object[] potentialMove) throws InterruptedException { //make compatible with partners plus.
+    private void calculateMove(Object[] potentialMove) throws InterruptedException {
         int homefieldPos = -1;
         int position = (int) potentialMove[0];
         Cards card = (Cards) potentialMove[1];

@@ -55,8 +55,9 @@ public class Server implements Runnable {
             InetAddress inetAddress = null;
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             for (NetworkInterface netint : Collections.list(interfaces)) {
-                if (netint.getName().matches("eth6")) {
-                    //System.out.println(netint.getName());
+              //  System.out.println(netint.getName());
+                if (netint.getName().matches("lo")) {
+                   // System.out.println(netint.getName());
                     Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
                     inetAddress = inetAddresses.nextElement();
                 }
