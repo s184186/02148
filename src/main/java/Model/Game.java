@@ -84,10 +84,14 @@ public class Game implements Runnable {
                     needCardsCounter++; //counter that increments when a user needs cards.
                 if (needCardsCounter == noOfPlayers)
                     shuffleCards(users); //If no one has any cards left, hand out some new ones.
-                Object[] potentialMove = game.get(new ActualField("gameRequest"),new ActualField("turnRequest"),
-                                                    new ActualField(playerTurn),new FormalField(String.class),new FormalField(String.class)); // A basic move will b e represented by position, the card used and username and extra field.
-                result=calculateMove(potentialMove);
-                game.put(result);
+                game.put("gameUpdate", "yourTurn", "", playerTurn, "", "", "");
+                result = "";
+                while(!result.matches("ok")) {
+                    Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
+                            new ActualField(playerTurn), new FormalField(String.class), new FormalField(String.class)); // A basic move will b e represented by position, the card used and username and extra field.
+                    result = calculateMove(potentialMove);
+                    game.put(result);
+                }
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
