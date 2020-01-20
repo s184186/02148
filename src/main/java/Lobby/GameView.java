@@ -401,18 +401,20 @@ class GameUpdater implements Runnable{
                         userSpace.get(new ActualField("confirmMove"));
                         cardJson = gson.toJson(gameView.getSelectedCard());
                         gameView.removeSelectedCard();
-                        game.put("gameRequest", "cardSwitch", username, cardJson, "");
+                        game.put("gameRequest", "switchCard", username, cardJson, "");
                         break;
 
                     case "hand":
                         for(Cards card: cards){
-                            System.out.println(card.getName());
+                            if(card != null){
+                                System.out.println(card.getName());
+                            }
                         }
                         gameView.setHand(cards);
                         break;
 
                     case "getSwitchedCard":
-                        System.out.println(cards[0].getName());
+                        System.out.println(actor + cards[0].getName());
                         gameView.addCardToHand(cards[0]);
                         break;
 
