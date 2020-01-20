@@ -41,10 +41,6 @@ public class Server implements Runnable {
             }
 
             //Setting up URI
-            //inetAddress = InetAddress.getLocalHost() will not always get the correct interface
-            //So need to iterate over all interfaces to get the correct one
-            //TODO: Find out how to automatically select the correct interface
-
             InetAddress inetAddress = InetAddress.getLocalHost();
             String ip = inetAddress.getHostAddress();
             int port = 11345;
@@ -256,12 +252,12 @@ class LobbyRequestReceiver implements Runnable {
                         break;
 
                     case "startGame":
-                        int numberOfPlayers = (int) serverSpace.query(Templates.numberOfPlayers)[1];
-                        if(numberOfPlayers % 2 != 0 || numberOfPlayers <=2 || !username.matches(server.getHost())){
-                            gameSpace.put("lobbyUpdate", "startGameAck", "", username, "ko");
-                            break;
-                        }
-                        gameSpace.put("lobbyUpdate", "startGameAck", "", server.getHost(), "ko");
+//                        int numberOfPlayers = (int) serverSpace.query(Templates.numberOfPlayers)[1];
+//                        if(numberOfPlayers % 2 != 0 || numberOfPlayers <=2 || !username.matches(server.getHost())){
+//                            gameSpace.put("lobbyUpdate", "startGameAck", "", username, "ko");
+//                            break;
+//                        }
+                        gameSpace.put("lobbyUpdate", "startGameAck", "", server.getHost(), "ok");
 
                         usersConnected = serverSpace.queryAll(connectedUser).toArray(new Object[0][]);
                         String[] users = new String[usersConnected.length];
