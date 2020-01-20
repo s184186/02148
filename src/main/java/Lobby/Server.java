@@ -55,8 +55,7 @@ public class Server implements Runnable {
             InetAddress inetAddress = null;
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             for (NetworkInterface netint : Collections.list(interfaces)) {
-                if (netint.getName().matches("eth6")) {
-                    //System.out.println(netint.getName());
+                if (netint.getName().matches("lo")) {
                     Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
                     inetAddress = inetAddresses.nextElement();
                 }
@@ -137,6 +136,7 @@ class LobbyRequestReceiver implements Runnable {
     }
 
     public void run() {
+        Gson gson = new Gson();
         try {
             while (!exit) {
                 //Look for connection requests
@@ -232,7 +232,6 @@ class LobbyRequestReceiver implements Runnable {
                             }
 
                             //Give newly connected user lobby information
-                            Gson gson = new Gson();
                             String usersJson = gson.toJson(users);
                             String teamsJson = gson.toJson(teams);
                             String[] userInfo = {usersJson, teamsJson, String.valueOf(version), String.valueOf(numberOfTeams), host};
@@ -262,8 +261,19 @@ class LobbyRequestReceiver implements Runnable {
 
                     case "startGame":
                         usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+                        String[] users = new String[usersConnected.length];
+                        int[] teams = new int[usersConnected.length];
+                        for (int i = 0; i < usersConnected.length; i++) {
+                            users[i] = (String) usersConnected[i][1];
+                            teams[i] = (Integer) usersConnected[i][2];
+                            game.put("lobbyUpdate", "connected", username, usersConnected[i][1], 0, "");
+                        }
+                        String usersJson = gson.toJson(users);
+                        String teamsJson = gson.toJson(teams);
                         for (Object[] user : usersConnected) {
-                            System.out.println("here");
+                            String[] userInfo = {usersJson, teamsJson, String.valueOf(version), String.valueOf(numberOfTeams), host};
+                            String userInfoJson = gson.toJson(userInfo);
+                            game.put("lobbyInfo", user[1], userInfoJson);
                             game.put("lobbyUpdate", "gameStart", "", user[1], 0, "");
                         }
                         server.put("gameUpdate","startGame");
