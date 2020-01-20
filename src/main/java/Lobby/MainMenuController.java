@@ -1,6 +1,5 @@
 package Lobby;
 
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -12,21 +11,21 @@ import java.io.IOException;
 
 public class MainMenuController {
 
+    public Button hostGameButton, connectToGameButton, exitGameButton;
+
     private MainMenuView mainMenuView;
     private Stage setupGameStage;
-    @FXML
-    private Button hostGame, connectGame, exitGame;
 
     public void initialize() {
         //Changes appearance of buttons on mouseover
-        hostGame.setOnMouseEntered(e -> hostGame.setStyle("-fx-background-color: rgb(97,134,47,0.53)"));
-        hostGame.setOnMouseExited(e -> hostGame.setStyle("-fx-background-color: transparent"));
+        hostGameButton.setOnMouseEntered(e -> hostGameButton.setStyle("-fx-background-color: rgb(97,134,47,0.53)"));
+        hostGameButton.setOnMouseExited(e -> hostGameButton.setStyle("-fx-background-color: transparent"));
 
-        connectGame.setOnMouseEntered(e -> connectGame.setStyle("-fx-background-color: rgb(97,134,47,0.53)"));
-        connectGame.setOnMouseExited(e -> connectGame.setStyle("-fx-background-color: transparent"));
+        connectToGameButton.setOnMouseEntered(e -> connectToGameButton.setStyle("-fx-background-color: rgb(97,134,47,0.53)"));
+        connectToGameButton.setOnMouseExited(e -> connectToGameButton.setStyle("-fx-background-color: transparent"));
 
-        exitGame.setOnMouseEntered(e -> exitGame.setStyle("-fx-background-color: rgb(97,134,47,0.53)"));
-        exitGame.setOnMouseExited(e -> exitGame.setStyle("-fx-background-color: transparent"));
+        exitGameButton.setOnMouseEntered(e -> exitGameButton.setStyle("-fx-background-color: rgb(97,134,47,0.53)"));
+        exitGameButton.setOnMouseExited(e -> exitGameButton.setStyle("-fx-background-color: transparent"));
     }
 
     public void handleHostGame() throws IOException {
