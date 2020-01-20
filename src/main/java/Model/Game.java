@@ -5,7 +5,6 @@ import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.Space;
 
-import javax.smartcardio.Card;
 import java.util.*;
 
 import static Model.Cards.*;
@@ -31,6 +30,7 @@ public class Game implements Runnable {
     private int teamTurnIndex;
     private int decksize = 13;
     private int[] teams;
+    private int[] positions;
     private int winningTeam = -1;
     private boolean justStarted;
     private int numberOfTeams;
@@ -48,12 +48,13 @@ public class Game implements Runnable {
         this.users = players;
         this.numberOfTeams = numberOfTeams;
         this.teams = teams;
-        this.board = new BoardField[noOfPlayers * 15 + noOfPlayers * 4 + noOfPlayers];
         this.noOfPlayers = players.length;
+        this.board = new BoardField[noOfPlayers * 15 + noOfPlayers * 4 + noOfPlayers];
         this.version = version;
         this.finished = new boolean[noOfPlayers];
         this.justStarted = true;
         this.playerHands= new Cards[noOfPlayers][5];
+        this.positions = new int[noOfPlayers*4];
     }
 
     @Override
@@ -63,7 +64,7 @@ public class Game implements Runnable {
             setupBoard();
             shuffleCards(users);
             for (int i = 0; i < noOfPlayers; i++) {
-                game.put("gameUpdate","switchCard", "", users[i],"","");
+                game.put("gameUpdate","switchCard", "", users[i],"","", "");
             }
              //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
             for (int i = 0; i < noOfPlayers; i++) {
@@ -114,7 +115,7 @@ public class Game implements Runnable {
     }
 
     private void shuffleCards(Object[] users) throws InterruptedException { //Cards are shuffled and handed out to users and the player to start is chosen
-        if (getCardsLeftInDeck() < noOfPlayers * 4 || deck==null) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
+        if (deck==null||getCardsLeftInDeck() < noOfPlayers * 4) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
             setupDeck();
         }
         Cards[] hand = new Cards[4];
@@ -157,12 +158,13 @@ public class Game implements Runnable {
         String username = (String) switchInfo[2];
         int index = getPlayerIndexToTheLeftOfUsername(username);
         playerHands[index][4] = card;
+        String handJson = gson.toJson(new Cards[] {card});
+        String positionsJson = gson.toJson(positions);
+        game.put("gameUpdate", "getSwitchedCard", username, users[index], handJson, "", positionsJson);
     }
     private String calculateMove(Object[] potentialMove) throws InterruptedException {
         int homefieldPos = -1;
-
         int position = (int) potentialMove[0];
-
         Cards[] card = gson.fromJson((String)potentialMove[3], Cards[].class);
         int[] pieces = gson.fromJson((String)potentialMove[4], int[].class);
         int[] pieceMoves = gson.fromJson((String)potentialMove[5], int[].class);
@@ -577,6 +579,11 @@ public class Game implements Runnable {
             setProtectedFields(i); //i.e. end circle, start circle and home field.
             String username = board[i * 15].getHomeField();
             board[noOfPlayers * 15 + noOfPlayers * 4 + i].setPieces(new String[]{username, username, username, username}); //Place alle pieces in their home circles.
+            positions[4*i]= noOfPlayers * 15 + noOfPlayers * 4 + i;
+            positions[4*i+1] = noOfPlayers * 15 + noOfPlayers * 4 + i;
+            positions[4*i+2] = noOfPlayers * 15 + noOfPlayers * 4 + i;
+            positions[4*i+3] = noOfPlayers * 15 + noOfPlayers * 4 + i;
+
         }
     }
 
@@ -590,8 +597,8 @@ public class Game implements Runnable {
     }
 
     private void setAllFields(){
-        for(BoardField x : board){
-            x = new BoardField(new String[4], "", "");
+        for(int i=0; i<board.length; i++){
+            board[i]=new BoardField(new String[4], "", "");
         }
     }
 
