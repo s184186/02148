@@ -41,10 +41,6 @@ public class Server implements Runnable {
             }
 
             //Setting up URI
-            //inetAddress = InetAddress.getLocalHost() will not always get the correct interface
-            //So need to iterate over all interfaces to get the correct one
-            //TODO: Find out how to automatically select the correct interface
-
             InetAddress inetAddress = InetAddress.getLocalHost();
             String ip = inetAddress.getHostAddress();
             int port = 11345;
