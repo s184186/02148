@@ -3,6 +3,7 @@ package Model;
 import org.jspace.ActualField;
 import org.jspace.Space;
 
+import javax.smartcardio.Card;
 import java.util.*;
 
 import static Model.Cards.*;
@@ -140,17 +141,18 @@ public class Game implements Runnable {
         }
         return cardsleft;
     }
-
+    // update playerHands
     private void switchCards(Object[] switchInfo) throws InterruptedException {
-        String from = (String) switchInfo[0];
+       /* String from = (String) switchInfo[0];
         String to = (String) switchInfo[1];
-        Cards card = (Cards) switchInfo[2];
+        Cards card = (Cards) switchInfo[2];*/
         //TODO: put
+/*
         game.put(to, card);
+*/
         //server tells users to mix cards
         //server tells user with username 'to' to add 'card' to his deck.
     }
-
     private String calculateMove(Object[] potentialMove) throws InterruptedException {
         int homefieldPos = -1;
         int position = (int) potentialMove[0];
