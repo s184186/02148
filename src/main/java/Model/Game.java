@@ -43,7 +43,7 @@ public class Game implements Runnable {
     private ArrayList<CardObj> deck;
 
 
-    public Game(String host, String[] players, int[] teams, int version, Space game, int numberOfTeams) { //assumes that user array's elements are alternating in terms of teams.
+    public Game(String host, String[] players, int[] teams, int version, Space game, int numberOfTeams) {
         this.game = game;
         this.users = players;
         this.numberOfTeams = numberOfTeams;
@@ -531,6 +531,7 @@ public class Game implements Runnable {
     }
 
     private void setupBoard() { //update this one
+        setAllFields();
         //setup each team's players
         for (int j = 0; j < noOfPlayers; j++) {
             if (teams[j] == 1) {
@@ -586,6 +587,12 @@ public class Game implements Runnable {
         board[noOfPlayers * 15 + pos * 4 + 1].setEndField(user.getUsername());
         board[noOfPlayers * 15 + pos * 4 + 2].setEndField(user.getUsername());
         board[noOfPlayers * 15 + pos * 4 + 3].setEndField(user.getUsername());
+    }
+
+    private void setAllFields(){
+        for(BoardField x : board){
+            x = new BoardField(new String[4], "", "");
+        }
     }
 
     private void setProtectedFields(int count) {
