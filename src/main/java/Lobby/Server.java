@@ -252,12 +252,12 @@ class LobbyRequestReceiver implements Runnable {
                         break;
 
                     case "startGame":
-                        int numberOfPlayers = (int) serverSpace.query(Templates.numberOfPlayers)[1];
-                        if(numberOfPlayers % 2 != 0 || numberOfPlayers <=2 || !username.matches(server.getHost())){
-                            gameSpace.put("lobbyUpdate", "startGameAck", "", username, "ko");
-                            break;
-                        }
-                        gameSpace.put("lobbyUpdate", "startGameAck", "", server.getHost(), "ko");
+//                        int numberOfPlayers = (int) serverSpace.query(Templates.numberOfPlayers)[1];
+//                        if(numberOfPlayers % 2 != 0 || numberOfPlayers <=2 || !username.matches(server.getHost())){
+//                            gameSpace.put("lobbyUpdate", "startGameAck", "", username, "ko");
+//                            break;
+//                        }
+                        gameSpace.put("lobbyUpdate", "startGameAck", "", server.getHost(), "ok");
 
                         usersConnected = serverSpace.queryAll(connectedUser).toArray(new Object[0][]);
                         String[] users = new String[usersConnected.length];

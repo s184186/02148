@@ -54,7 +54,7 @@ public class GameView{
 
     private Piece selectedPiece = null;
     private Field selectedField = null;
-    private int selectedCard = -1;
+    private Cards selectedCard = null;
     String currentMove = "";
 
     private String[] colorNames;
@@ -204,9 +204,9 @@ public class GameView{
     }
 
     private void confirmMove() {
-        if(currentMove.matches("switch") && selectedCard == -1){
+        if(currentMove.matches("switch") && selectedCard == null){
             return;
-        } else if (currentMove.matches("yourTurn") && selectedCard == -1 && selectedPiece == null){
+        } else if (currentMove.matches("yourTurn") && selectedCard == null && selectedPiece == null){
             return;
         }
 
@@ -249,7 +249,7 @@ public class GameView{
         rectangle1.setWidth(boardWidth/4);
         rectangle1.setFill(Color.DARKGRAY);
         rectangle1.setStroke(Color.BLACK);
-        rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> selectedCard = i);
+        rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> selectedCard = hand[i]);
         makeDarker(rectangle1);
         pane.getChildren().add(rectangle1);
     }
@@ -306,7 +306,7 @@ public class GameView{
         this.currentMove = type;
     }
 
-    public int getSelectedCard() {
+    public Cards getSelectedCard() {
         return selectedCard;
     }
 
@@ -385,6 +385,8 @@ class GameUpdater implements Runnable{
                 int[] pieceIndexes = gson.fromJson((String) gameUpdate[5], int[].class);
                 int[] positions = gson.fromJson((String) gameUpdate[6], int[].class);
 
+                String cardJson;
+
                 switch (type) {
                     case "playerMove":
                         for (int i = 0; i < pieceIndexes.length; i++) {
@@ -396,7 +398,8 @@ class GameUpdater implements Runnable{
                     case "switchCard":
                         gameView.setCurrentMove(type);
                         userSpace.get(new ActualField("confirmMove"));
-                        game.put("gameRequest", "cardSwitch", username, gameView.getSelectedCard(), "");
+                        cardJson = gson.toJson(gameView.getSelectedCard());
+                        game.put("gameRequest", "cardSwitch", username, cardJson, "");
                         break;
 
                     case "hand":
@@ -415,7 +418,8 @@ class GameUpdater implements Runnable{
                         while(true) {
                             gameView.setCurrentMove(type);
                             userSpace.get(new ActualField("confirmMove"));
-                            game.put("gameRequest", "turnRequest", username, gameView.getSelectedCard(), gameView.getSelectedPiece().getIndex());
+                            cardJson = gson.toJson(gameView.getSelectedCard());
+                            game.put("gameRequest", "turnRequest", username, cardJson, gameView.getSelectedPiece().getIndex());
                             Object[] resp = game.get(new ActualField("gameUpdate"), new ActualField("turnRequestAck"), new FormalField(String.class), new ActualField(username),
                                     new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
                             if (((String) resp[2]).matches("ok")) {
@@ -474,7 +478,6 @@ class Piece{
 }
 
 class Field{
-
     private double x1E;
     private double y1E;
     private double x2E;

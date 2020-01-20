@@ -1,6 +1,8 @@
 package Model;
 
+import com.google.gson.Gson;
 import org.jspace.ActualField;
+import org.jspace.FormalField;
 import org.jspace.Space;
 
 import java.util.*;
@@ -32,6 +34,8 @@ public class Game implements Runnable {
     private boolean justStarted;
     private int numberOfTeams;
     private int needCardsCounter;
+    private Cards[][] playerHands;
+    private Gson gson = new Gson();
     private ArrayList<Player> teamOne = new ArrayList<>();
     private ArrayList<Player> teamTwo = new ArrayList<>();
     private ArrayList<Player> teamThree = new ArrayList<>();
@@ -56,10 +60,13 @@ public class Game implements Runnable {
             //Users will be represented as string list and handed down from server.
             setupBoard();
             shuffleCards(users);
-            //TODO: put
-            game.put("switch!"); //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
             for (int i = 0; i < noOfPlayers; i++) {
-                Object[] switchInfo = game.get(switchReq.getFields()); //switch req consits of from, to and card fields
+                game.put("gameUpdate","switchCard", "", users[i],"","");
+            }
+             //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
+            for (int i = 0; i < noOfPlayers; i++) {
+                Object[] switchInfo = game.get(new ActualField("gameRequest"),new ActualField("switchCard"),
+                                                new ActualField(users[i]),new FormalField(String.class),new FormalField(String.class)); //switch req consits of from, to and card fields
                 switchCards(switchInfo);
             }
             // Move will be represented by position, the card used and username.
@@ -72,8 +79,8 @@ public class Game implements Runnable {
                     needCardsCounter++; //counter that increments when a user needs cards.
                 if (needCardsCounter == noOfPlayers)
                     shuffleCards(users); //If no one has any cards left, hand out some new ones.
-                //TODO: query
-                Object[] potentialMove = game.get(move(playerTurn).getFields()); // A basic move will b e represented by position, the card used and username and extra field.
+                Object[] potentialMove = game.get(new ActualField("gameRequest"),new ActualField("turnRequest"),
+                                                    new ActualField(playerTurn),new FormalField(String.class),new FormalField(String.class)); // A basic move will b e represented by position, the card used and username and extra field.
                 result=calculateMove(potentialMove);
                 game.put(result);
 
@@ -122,7 +129,9 @@ public class Game implements Runnable {
                 }
 
             }
-            game.put(users[i], hand); //Each user's hand is put in the tuple space. The users name is the id factor.
+            playerHands[i] = hand;
+            String handJson = gson.toJson(hand);
+            game.put("gameUpdate", "hand", "", users[i], handJson, "", ""); //Each user's hand is put in the tuple space. The users name is the id factor.
         }
         if (justStarted) {
             playerTurnIndex = random.nextInt(noOfPlayers); //figuring out who has the first turn
@@ -153,12 +162,18 @@ public class Game implements Runnable {
 
     private String calculateMove(Object[] potentialMove) throws InterruptedException {
         int homefieldPos = -1;
+
         int position = (int) potentialMove[0];
-        Cards card = (Cards) potentialMove[1];
+
+        Cards[] card = gson.fromJson((String)potentialMove[3], Cards[].class);
+        int[] pieces = gson.fromJson((String)potentialMove[4], int[].class);
+        int[] pieceMoves = gson.fromJson((String)potentialMove[5], int[].class);
+
         String username = (String) potentialMove[2];
         int extra = (int) potentialMove[3];   //can either represent the piece a user wants to switch positions with, or in case of the card seven, how many moves forward this piece should move
-        int endPosition = (int) potentialMove[0] + card.getMoves();
-        switch (card) {
+        int endPosition = (int) potentialMove[0] + card[0].getMoves();
+
+        switch (card[0]) {
 
             case FOUR: //move backwards
                 if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
@@ -234,7 +249,7 @@ public class Game implements Runnable {
                     nextTurn();
                     return "split done!";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
                 }
-                potentialMove[1] = card.getEnumByNoOfMoves(extra);
+                potentialMove[1] = card[0].getEnumByNoOfMoves(extra);
                 splitPosition.add(position+extra);
                 calculateMove(potentialMove);
 
