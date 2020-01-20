@@ -36,6 +36,7 @@ public class Game implements Runnable {
     private int numberOfTeams;
     private int needCardsCounter;
     private Cards[][] playerHands;
+    private int[] pieceIndexes;
     private Gson gson = new Gson();
     private ArrayList<Player> teamOne = new ArrayList<>();
     private ArrayList<Player> teamTwo = new ArrayList<>();
@@ -55,6 +56,7 @@ public class Game implements Runnable {
         this.justStarted = true;
         this.playerHands= new Cards[noOfPlayers][5];
         this.positions = new int[noOfPlayers*4];
+        this.pieceIndexes= new int[noOfPlayers*4];
     }
 
     @Override
@@ -118,7 +120,7 @@ public class Game implements Runnable {
         if (deck==null||getCardsLeftInDeck() < noOfPlayers * 4) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
             setupDeck();
         }
-        Cards[] hand = new Cards[4];
+        Cards[] hand = new Cards[5];
         Random random = new Random();
         for (int i = 0; i < noOfPlayers; i++) {
             for (int j = 0; j < 4; j++) {
@@ -154,20 +156,19 @@ public class Game implements Runnable {
     }
     // update playerHands
     private void switchCards(Object[] switchInfo) throws InterruptedException {
-        Cards card = (Cards) switchInfo[3];
+        Cards card = gson.fromJson((String) switchInfo[3], Cards.class);
         String username = (String) switchInfo[2];
         int index = getPlayerIndexToTheLeftOfUsername(username);
         playerHands[index][4] = card;
         String handJson = gson.toJson(new Cards[] {card});
-        String positionsJson = gson.toJson(positions);
-        game.put("gameUpdate", "getSwitchedCard", username, users[index], handJson, "", positionsJson);
+        game.put("gameUpdate", "getSwitchedCard", username, users[index], handJson, "", "");
     }
     private String calculateMove(Object[] potentialMove) throws InterruptedException {
         int homefieldPos = -1;
         int position = (int) potentialMove[0];
         Cards[] card = gson.fromJson((String)potentialMove[3], Cards[].class);
-        int[] pieces = gson.fromJson((String)potentialMove[4], int[].class);
-        int[] pieceMoves = gson.fromJson((String)potentialMove[5], int[].class);
+        int[] pieces = gson.fromJson((String)potentialMove[4], int[].class); // de brikker der bliver flyttet
+        int[] pieceMoves = gson.fromJson((String)potentialMove[5], int[].class); //hvor meget de bliver flyttet
 
         String username = (String) potentialMove[2];
         int extra = (int) potentialMove[3];   //can either represent the piece a user wants to switch positions with, or in case of the card seven, how many moves forward this piece should move
@@ -363,6 +364,8 @@ public class Game implements Runnable {
                             System.out.println("Team " + winningTeam + " won");
                         }
                         //TODO: get
+/*                        game.put("gameUpdate", "playerMove", username,
+                                new ActualField(username), new FormalField(String.class), new FormalField());*/
                         nextTurn();
                         return "ok"; //remove card from space/card was valid and has been used
                     }
@@ -408,6 +411,15 @@ public class Game implements Runnable {
                 }
         }
         return "ok";
+    }
+
+    private void update(String username) throws InterruptedException {
+        String pieceindex = gson.toJson(pieceIndexes);
+        String position =  gson.toJson(positions);
+        for(int i=0; i<noOfPlayers; i++){
+        game.put("gameUpdate", "playerMove", username,
+                users[i],  "", pieceindex, position);
+        }
     }
 
 
@@ -650,8 +662,11 @@ public class Game implements Runnable {
         return -1;
     }
     private int getPlayerIndexToTheLeftOfUsername(String username){
+        int index=-1;
         ArrayList<Player> teamtmp = getTeamByUsername(username);
-        int index =teamtmp.indexOf(username);
+        for(int i=0; i<teamtmp.size();i++){
+            if(teamtmp.get(i).getUsername().matches(username)) index=i;
+        }
         int targetIndex = (index+1) % teamtmp.size();
         String usernameToTheLeft = teamtmp.get(targetIndex).getUsername();
         return getIndexByUsername(usernameToTheLeft);
@@ -663,4 +678,10 @@ public class Game implements Runnable {
         }
         return index;
     }
+/*
+    private void movePiece(int position, int endPosition){
+
+        for()
+
+    }*/
 }
