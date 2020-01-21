@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -13,6 +14,8 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import java.awt.*;
 
@@ -28,7 +31,7 @@ public class GameView{
     public StackPane stackPane;
     public Pane pane;
     public Label card1, card2, card3, card4, label;
-    private Label[] cards;
+    private Label[] cardNameLabels;
 
     private static final int boardWidth = 900;
     private static final int buttonHeight = 100;
@@ -58,6 +61,8 @@ public class GameView{
     private int selectedCard = -1;
     String currentMove = "";
 
+    private Label selectedCardLabel, selectedPiecesLabel, selectedFieldsLabel;
+
     private String[] colorNames;
     private Color[] colors;
     static Color blue = Color.rgb(61,88,222);
@@ -74,11 +79,12 @@ public class GameView{
     private String[] users;
     private int[] teams;
     private int numberOfTeams;
+    private Label[] usernameLabels;
 
     public void initialize(){
 
         label.setLayoutX(boardWidth/2.-label.getPrefWidth()/2);
-        label.setLayoutY(1.2*boardWidth/2.-label.getPrefHeight()/2);
+        label.setLayoutY(boardWidth-label.getPrefHeight()/2-25);
 
         pane.setBackground(new Background(new BackgroundFill(Color.TURQUOISE, CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -94,12 +100,38 @@ public class GameView{
         centerButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> confirmMove());
         pane.getChildren().add(centerButton);
 
-        cards = new Label[]{card1, card2, card3, card4};
+        VBox selectedBox = new VBox();
+        selectedBox.setPrefHeight(15);
+        selectedBox.setPrefWidth(150);
+        selectedBox.setAlignment(Pos.CENTER);
+        selectedBox.setLayoutX(boardWidth/2.-selectedBox.getPrefWidth()/2);
+        selectedBox.setLayoutY(11*boardWidth/16.-selectedBox.getPrefHeight()/2);
 
-        for(int i = 0; i < 4; i++){
-            cards[i].setLayoutX((1+i*2)*boardWidth/8.-label.getPrefWidth()/2);
-            cards[i].setLayoutY(boardHeight-75-label.getPrefHeight()/2);
-            cards[i].toFront();
+        HBox selectedCardBox = new HBox();
+        Label selectedCardLabelt = new Label("Selected card: ");
+        selectedCardLabel = new Label();
+        selectedCardBox.getChildren().addAll(selectedCardLabelt, selectedCardLabel);
+
+        HBox selectedPiecesBox = new HBox();
+        Label selectedPiecesLabelt = new Label("Selected pieces: ");
+        selectedPiecesLabel = new Label();
+        selectedPiecesBox.getChildren().addAll(selectedPiecesLabelt, selectedPiecesLabel);
+
+        HBox selectedFieldsBox = new HBox();
+        Label selectedFieldsLabelt = new Label("Selected fields: ");
+        selectedFieldsLabel = new Label();
+        selectedFieldsBox.getChildren().addAll(selectedFieldsLabelt, selectedFieldsLabel);
+
+        selectedBox.getChildren().addAll(selectedCardBox, selectedPiecesBox, selectedFieldsBox);
+
+        pane.getChildren().add(selectedBox);
+
+        cardNameLabels = new Label[]{card1, card2, card3, card4};
+
+        for(int i = 0; i < 4; i++) {
+            cardNameLabels[i].setLayoutX((1 + i * 2) * boardWidth / 8. - cardNameLabels[i].getPrefWidth() / 2);
+            cardNameLabels[i].setLayoutY(boardHeight - 75 - cardNameLabels[i].getPrefHeight() / 2);
+            cardNameLabels[i].toFront();
         }
     }
 
@@ -113,6 +145,8 @@ public class GameView{
         }
 
         numberOfFields = 60 + version * 30;
+
+        usernameLabels = new Label[numberOfFields/15];
 
         fields = new Field[numberOfFields];
         for(int i = 0; i < numberOfFields; i++){
@@ -133,24 +167,45 @@ public class GameView{
         for(int i = 0; i < numberOfFields; i++) {
             double v = Math.cos(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
             double w = Math.sin(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
+            double v2 = Math.cos(Math.toRadians((i + 2.5 + version + startFieldOffset) * 360 / numberOfFields));
+            double w2 = Math.sin(Math.toRadians((i + 2.5 + version + startFieldOffset) * 360 / numberOfFields));
             int finalI = i;
 
-            double xO = (v*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
-            double yO = (w*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+            double xStartFields = (v*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+            double yStartFields = (w*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
 
-            double x1 = (v*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
-            double y1 = (w*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
+            double xControl = (v*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
+            double yControl = (w*(boardWidth-outerCircleBorderPadding+50)/2)+boardWidth/2.;
 
-            double xI = (v*(boardWidth-innerCircleBorderPadding-75)/2)+boardWidth/2.;
-            double yI = (w*(boardWidth-innerCircleBorderPadding-75)/2)+boardWidth/2.;
+            double xEndFields = (v*(boardWidth-innerCircleBorderPadding-75)/2)+boardWidth/2.;
+            double yEndFields = (w*(boardWidth-innerCircleBorderPadding-75)/2)+boardWidth/2.;
 
-            fields[i].setField(x1,y1);
-            fields[i].getPath().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedField = fields[finalI]);
+            double xUsernameLabels = (v2*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+            double yUsernameLabels = (w2*(boardWidth-outerCircleBorderPadding+100)/2)+boardWidth/2.;
+
+            fields[i].setField(xControl,yControl);
+            fields[i].getPath().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {selectedField = fields[finalI];
+                                                                                    selectedFieldsLabel.setText(String.valueOf(selectedField.getIndex()));});
 
             if(i%15 == 0){
                 int n = i/15;
-                drawEndFields(xI, yI, endFieldRadius, colors[n], endFieldSizeDec, endFieldDistance*v, endFieldDistance*w);
-                drawStartPieces(xO, yO, colors[n],colorNames[n]);
+                usernameLabels[n]=new Label();
+                try{
+                    usernameLabels[n].setText(users[n]);
+                    if(users[n].matches(username)){
+                        usernameLabels[n].setStyle("-fx-font-weight: bold");
+                    }
+                } catch (Exception e) {
+
+                }
+                usernameLabels[n].setPrefHeight(15);
+                usernameLabels[n].setPrefWidth(100);
+                usernameLabels[n].setLayoutX(xUsernameLabels-usernameLabels[n].getPrefWidth()/2);
+                usernameLabels[n].setLayoutY(yUsernameLabels-usernameLabels[n].getPrefHeight()/2);
+                usernameLabels[n].setAlignment(Pos.CENTER);
+                pane.getChildren().add(usernameLabels[n]);
+                drawEndFields(xEndFields, yEndFields, endFieldRadius, colors[n], endFieldSizeDec, endFieldDistance*v, endFieldDistance*w);
+                drawStartPieces(xStartFields, yStartFields, colors[n],colorNames[n]);
             }
         }
         GameUpdater gameUpdater = new GameUpdater(gameSpace, userSpace, username, this);
@@ -252,7 +307,10 @@ public class GameView{
         rectangle1.setWidth(boardWidth/4);
         rectangle1.setFill(Color.DARKGRAY);
         rectangle1.setStroke(Color.BLACK);
-        rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> selectedCard = i);
+        rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+                                                                    selectedCard = i;
+                                                                    selectedCardLabel.setText(hand[i].getName());
+                                                                });
         makeDarker(rectangle1);
         pane.getChildren().add(rectangle1);
     }
@@ -269,14 +327,23 @@ public class GameView{
     private void drawPiece(double x, double y, Color color, String colorName){
         Piece piece = new Piece(pieceIndex);
         Circle pieceC = new Circle(x, y, pieceRadius/2);
+        Text text = new Text(String.valueOf(pieceIndex));
+        StackPane stack = new StackPane();
+
         piece.setCircle(pieceC);
-        piece.setName("1"+colorName);
+        piece.setName(pieceIndex+colorName);
         pieceC.setFill(color);
         pieceC.setStroke(Paint.valueOf("black"));
-        pieceC.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectedPiece = piece);
         makeDarker(pieceC);
         pieceC.toBack();
-        pane.getChildren().add(pieceC);
+
+        stack.getChildren().addAll(pieceC, text);
+        stack.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {selectedPiece = piece;
+            selectedPiecesLabel.setText(String.valueOf(piece.getIndex()));});
+        stack.setLayoutX(x-pieceRadius/2.);
+        stack.setLayoutY(y-pieceRadius/2.);
+
+        pane.getChildren().add(stack);
         pieces[pieceIndex] = piece;
         pieceIndex++;
     }
@@ -288,8 +355,8 @@ public class GameView{
         pane.getChildren().add(startField);
 
         drawPiece(x-pieceRadius, y, color, colorName);
-        drawPiece(x+pieceRadius, y,color, colorName);
         drawPiece(x, y-pieceRadius,color, colorName);
+        drawPiece(x+pieceRadius, y,color, colorName);
         drawPiece(x, y+pieceRadius,color, colorName);
     }
 
@@ -321,7 +388,7 @@ public class GameView{
         Platform.runLater(
                 () -> {
                     for(int i = 0; i < 4; i++){
-                        cards[i].setText(hand[i].getName());
+                        cardNameLabels[i].setText(hand[i].getName());
                     }
                 }
         );
@@ -335,8 +402,8 @@ public class GameView{
                         if(hand[i] == null){
                             hand[i] = newCard;
                         }
-                        if(cards[i].getText().matches("")){
-                            cards[i].setText(newCard.getName());
+                        if(cardNameLabels[i].getText().matches("")){
+                            cardNameLabels[i].setText(newCard.getName());
                             break;
                         }
                     }
@@ -374,7 +441,7 @@ public class GameView{
     }
 
     public void removeSelectedCard() {
-        for(Label card: cards){
+        for(Label card: cardNameLabels){
             if(card.getText().matches(hand[selectedCard].getName())){
                 card.setText("");
                 break;
@@ -597,13 +664,11 @@ class Field{
                 color = GameView.green;
             } else {
                 color = GameView.blue;
-
             }
         }
 
         MoveTo moveTo = new MoveTo(x1S, y1S);
         LineTo line1 = new LineTo(x2S, y2S);
-//        LineTo line2 = new LineTo(x2E, y2E);
         QuadCurveTo quadTo = new QuadCurveTo();
 
         quadTo.setControlX(v);
@@ -622,7 +687,6 @@ class Field{
         GameView.makeDarker(path);
 
         pane.getChildren().add(path);
-
     }
 
     public Point getNextSpot(Piece selectedPiece){
