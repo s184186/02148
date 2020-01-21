@@ -1,5 +1,6 @@
 package Lobby;
 
+import Model.Game;
 import com.google.gson.Gson;
 import org.jspace.*;
 import java.net.InetAddress;
@@ -86,8 +87,8 @@ public class Server implements Runnable {
             users[i] = (String) regUsers[i][1];
             teams[i] = (Integer) regUsers[i][2];
         }
-        MainGame mainGame = new MainGame(host, users, teams, version, game, numberOfTeams);
-        mainGame.startGame();
+        Game mainGame = new Game(host, users, teams, version, game, numberOfTeams);
+        new Thread(mainGame).start();
     }
 
     private Thread startThread(Runnable object) {

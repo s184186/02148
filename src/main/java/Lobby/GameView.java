@@ -28,6 +28,7 @@ public class GameView{
     public StackPane stackPane;
     public Pane pane;
     public Label card1, card2, card3, card4, label;
+    private Label[] cards;
 
     private static final int boardWidth = 900;
     private static final int buttonHeight = 100;
@@ -54,7 +55,7 @@ public class GameView{
 
     private Piece selectedPiece = null;
     private Field selectedField = null;
-    private Cards selectedCard = null;
+    private int selectedCard = -1;
     String currentMove = "";
 
     private String[] colorNames;
@@ -68,22 +69,16 @@ public class GameView{
     private Space gameSpace;
     private String username;
     private Space userSpace;
-    private Cards[] hand;
+    private Cards[] hand = new Cards[5];
     private String host;
     private String[] users;
     private int[] teams;
     private int numberOfTeams;
 
     public void initialize(){
-        Label[] cards = {card1, card2, card3, card4};
 
         label.setLayoutX(boardWidth/2.-label.getPrefWidth()/2);
         label.setLayoutY(1.2*boardWidth/2.-label.getPrefHeight()/2);
-
-        for(int i = 0; i < 4; i++){
-            cards[i].setLayoutX((1+i*2)*boardWidth/8.-label.getPrefWidth()/2);
-            cards[i].setLayoutY(boardHeight-75-label.getPrefHeight()/2);
-        }
 
         pane.setBackground(new Background(new BackgroundFill(Color.TURQUOISE, CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -98,6 +93,14 @@ public class GameView{
         centerButton.setFill(Paint.valueOf("black"));
         centerButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> confirmMove());
         pane.getChildren().add(centerButton);
+
+        cards = new Label[]{card1, card2, card3, card4};
+
+        for(int i = 0; i < 4; i++){
+            cards[i].setLayoutX((1+i*2)*boardWidth/8.-label.getPrefWidth()/2);
+            cards[i].setLayoutY(boardHeight-75-label.getPrefHeight()/2);
+            cards[i].toFront();
+        }
     }
 
     public void setup(){
@@ -108,6 +111,7 @@ public class GameView{
             colorNames = new String[]{"purple", "red", "orange", "yellow", "green", "blue"};
             colors = new Color[]{purple, red, orange, yellow, green, blue};
         }
+
         numberOfFields = 60 + version * 30;
 
         fields = new Field[numberOfFields];
@@ -204,12 +208,11 @@ public class GameView{
     }
 
     private void confirmMove() {
-        if(currentMove.matches("switch") && selectedCard == null){
+        if(currentMove.matches("switchCard") && selectedCard == -1){
             return;
-        } else if (currentMove.matches("yourTurn") && selectedCard == null && selectedPiece == null){
+        } else if (currentMove.matches("yourTurn") && selectedCard == -1 && selectedPiece == null){
             return;
         }
-
         try {
             userSpace.put("confirmMove");
         } catch (InterruptedException e) {
@@ -249,7 +252,7 @@ public class GameView{
         rectangle1.setWidth(boardWidth/4);
         rectangle1.setFill(Color.DARKGRAY);
         rectangle1.setStroke(Color.BLACK);
-        rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> selectedCard = hand[i]);
+        rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> selectedCard = i);
         makeDarker(rectangle1);
         pane.getChildren().add(rectangle1);
     }
@@ -307,7 +310,7 @@ public class GameView{
     }
 
     public Cards getSelectedCard() {
-        return selectedCard;
+        return hand[selectedCard];
     }
 
     public void setUserSpace(Space userSpace) {
@@ -315,11 +318,31 @@ public class GameView{
     }
 
     public void setHand(Cards[] hand) {
+        Platform.runLater(
+                () -> {
+                    for(int i = 0; i < 4; i++){
+                        cards[i].setText(hand[i].getName());
+                    }
+                }
+        );
         this.hand = hand;
     }
 
-    public void addCardToHand(Cards card) {
-        this.hand[3] = card;
+    public void addCardToHand(Cards newCard) {
+        Platform.runLater(
+                () -> {
+                    for(int i = 0; i < 4; i++){
+                        if(hand[i] == null){
+                            hand[i] = newCard;
+                        }
+                        if(cards[i].getText().matches("")){
+                            cards[i].setText(newCard.getName());
+                            break;
+                        }
+                    }
+                }
+        );
+
     }
 
     public Piece[] getPieces(){
@@ -349,6 +372,16 @@ public class GameView{
     public void setNumberOfTeams(int numberOfTeams) {
         this.numberOfTeams = numberOfTeams;
     }
+
+    public void removeSelectedCard() {
+        for(Label card: cards){
+            if(card.getText().matches(hand[selectedCard].getName())){
+                card.setText("");
+                break;
+            }
+        }
+        hand[selectedCard] = null;
+    }
 }
 
 class GameUpdater implements Runnable{
@@ -372,13 +405,10 @@ class GameUpdater implements Runnable{
         try {
 
             while (true) {
-                Object[] gameUpdate = new Object[0];
-                try {
-                    gameUpdate = game.get(new ActualField("gameUpdate"), new FormalField(String.class), new FormalField(String.class),
+
+                Object[] gameUpdate = game.get(new ActualField("gameUpdate"), new FormalField(String.class), new FormalField(String.class),
                             new ActualField(username), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
                 String type = (String) gameUpdate[1];
                 String actor = (String) gameUpdate[2];
                 Cards[] cards = gson.fromJson((String) gameUpdate[4], Cards[].class);
@@ -386,6 +416,8 @@ class GameUpdater implements Runnable{
                 int[] positions = gson.fromJson((String) gameUpdate[6], int[].class);
 
                 String cardJson;
+
+                System.out.println(type);
 
                 switch (type) {
                     case "playerMove":
@@ -399,7 +431,8 @@ class GameUpdater implements Runnable{
                         gameView.setCurrentMove(type);
                         userSpace.get(new ActualField("confirmMove"));
                         cardJson = gson.toJson(gameView.getSelectedCard());
-                        game.put("gameRequest", "cardSwitch", username, cardJson, "");
+                        gameView.removeSelectedCard();
+                        game.put("gameRequest", "switchCard", username, cardJson, "");
                         break;
 
                     case "hand":
@@ -407,6 +440,7 @@ class GameUpdater implements Runnable{
                         break;
 
                     case "getSwitchedCard":
+                        System.out.println(actor + cards[0].getName());
                         gameView.addCardToHand(cards[0]);
                         break;
 
@@ -420,9 +454,12 @@ class GameUpdater implements Runnable{
                             userSpace.get(new ActualField("confirmMove"));
                             cardJson = gson.toJson(gameView.getSelectedCard());
                             game.put("gameRequest", "turnRequest", username, cardJson, gameView.getSelectedPiece().getIndex());
+
                             Object[] resp = game.get(new ActualField("gameUpdate"), new ActualField("turnRequestAck"), new FormalField(String.class), new ActualField(username),
                                     new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
+
                             if (((String) resp[2]).matches("ok")) {
+                                gameView.removeSelectedCard();
                                 break;
                             }
                         }
