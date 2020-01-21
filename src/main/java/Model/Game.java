@@ -69,11 +69,15 @@ public class Game implements Runnable {
                 game.put("gameUpdate","switchCard", "", users[i],"","", "");
             }
              //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
+            Object[][] switchInfos = new Object[noOfPlayers][];
             for (int i = 0; i < noOfPlayers; i++) {
-                Object[] switchInfo = game.get(new ActualField("gameRequest"),new ActualField("switchCard"),
+                switchInfos[i] = game.get(new ActualField("gameRequest"),new ActualField("switchCard"),
                                                 new ActualField(users[i]),new FormalField(String.class),new FormalField(String.class)); //switch req consits of from, to and card fields
+            }
+            for(Object[] switchInfo: switchInfos){
                 switchCards(switchInfo);
             }
+
             // Move will be represented by position, the card used and username.
         } catch (InterruptedException e) {
             e.printStackTrace();
