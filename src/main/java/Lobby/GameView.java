@@ -15,7 +15,6 @@ import javafx.scene.shape.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import java.awt.*;
 
@@ -458,6 +457,15 @@ public class GameView{
         return null;
     }
 
+    public int getSelectedCardOption(){
+        for(int i = 0; i < 4; i++){
+            if(selectedCard[i]>0){
+                return selectedCard[i];
+            }
+        }
+        return -1;
+    }
+
     public void setUserSpace(Space userSpace) {
         this.userSpace = userSpace;
     }
@@ -494,8 +502,14 @@ public class GameView{
         return this.pieces;
     }
 
-    public Piece[] getSelectedPiece() {
-        return selectedPiece;
+    public int[] getSelectedPieces() {
+        int[] selectedPieceIndexes = new int[4];
+        for(int i = 0; i < 4; i++){
+            if(selectedPiece[i] != null) {
+                selectedPieceIndexes[i] = selectedPiece[i].getIndex();
+            }
+        }
+        return selectedPieceIndexes;
     }
 
     public void setHostName(String host) {
@@ -521,7 +535,7 @@ public class GameView{
     public void removeSelectedCard() {
         for(Label card: cardNameLabels){
             if(card.getText().matches(getSelectedCard().getName())){
-                card.setText("");
+                Platform.runLater(() -> card.setText(""));
                 break;
             }
         }
@@ -530,6 +544,16 @@ public class GameView{
                 hand[i] = null;
             }
         }
+    }
+
+    public int[] getSelectedFields() {
+        int[] selectedFieldIndexes = new int[4];
+        for(int i = 0; i < 4; i++){
+            if(selectedField[i] != null) {
+                selectedFieldIndexes[i] = selectedField[i].getIndex();
+            }
+        }
+        return selectedFieldIndexes;
     }
 }
 
@@ -549,6 +573,7 @@ class GameUpdater implements Runnable{
 
     @Override
     public void run() {
+        System.out.println(username);
         Gson gson = new Gson();
 
         try {
@@ -579,7 +604,9 @@ class GameUpdater implements Runnable{
                     case "switchCard":
                         gameView.setCurrentMove(type);
                         userSpace.get(new ActualField("confirmMove"));
+
                         cardJson = gson.toJson(gameView.getSelectedCard());
+
                         gameView.removeSelectedCard();
                         game.put("gameRequest", "switchCard", username, cardJson, "");
                         break;
@@ -601,10 +628,13 @@ class GameUpdater implements Runnable{
                         while(true) {
                             gameView.setCurrentMove(type);
                             userSpace.get(new ActualField("confirmMove"));
-                            cardJson = gson.toJson(gameView.getSelectedCard());
-                            String piecesJson = gson.toJson(gameView.getSelectedPiece());
 
-                            game.put("gameRequest", "turnRequest", username, cardJson, piecesJson);
+                            cardJson = gson.toJson(gameView.getSelectedCard());
+                            int selectedCardOption = gameView.getSelectedCardOption() - 1;
+                            String piecesJson = gson.toJson(gameView.getSelectedPieces());
+                            String fieldsJson = gson.toJson(gameView.getSelectedFields());
+
+                            game.put("gameRequest", "turnRequest", username, cardJson, piecesJson, fieldsJson, selectedCardOption);
 
                             Object[] resp = game.get(new ActualField("gameUpdate"), new ActualField("turnRequestAck"), new FormalField(String.class), new ActualField(username),
                                     new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
@@ -613,6 +643,7 @@ class GameUpdater implements Runnable{
                                 gameView.removeSelectedCard();
                                 break;
                             }
+                            System.out.println("Move illegal");
                         }
                         break;
 
