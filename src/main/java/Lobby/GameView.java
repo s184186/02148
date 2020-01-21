@@ -59,7 +59,7 @@ public class GameView{
 
     private Piece[] selectedPiece = new Piece[4];
     private Field[] selectedField = new Field[4];
-    private int selectedCard = -1;
+    private int[] selectedCard = new int[4];
     String currentMove = "";
 
     private Label selectedCardLabel, selectedPiecesLabel, selectedFieldsLabel;
@@ -143,7 +143,7 @@ public class GameView{
 
     private void resetSelections() {
         selectedCardLabel.setText("");
-        selectedCard = -1;
+        selectedCard = new int[4];
         selectedPiecesLabel.setText("");
         selectedPiece = new Piece[4];
         selectedFieldsLabel.setText("");
@@ -287,11 +287,33 @@ public class GameView{
     }
 
     private void confirmMove() {
-        if(currentMove.matches("switchCard") && selectedCard == -1){
-            return;
-        } else if (currentMove.matches("yourTurn") && selectedCard == -1 && selectedPiece == null){
+        boolean empty = true;
+        if(currentMove.matches("switchCard")){
+            for(int card :selectedCard){
+                if(card != 0){
+                    empty = false;
+                    break;
+                }
+            }
+        } else if (currentMove.matches("yourTurn")){
+            for(int card :selectedCard){
+                if(card != 0){
+                    empty = false;
+                    break;
+                }
+            }
+            for(Piece piece: selectedPiece){
+                if(piece != null){
+                    empty = false;
+                    break;
+                }
+            }
+        }
+
+        if(empty){
             return;
         }
+
         try {
             userSpace.put("confirmMove");
         } catch (InterruptedException e) {
@@ -324,19 +346,36 @@ public class GameView{
     }
 
     private void createButton(int x, int i){
+        HBox buttonBox = new HBox();
+
+        buttonBox.setLayoutX(x);
+        buttonBox.setLayoutY(boardWidth);
+
         Rectangle rectangle1 = new Rectangle();
-        rectangle1.setX(x);
-        rectangle1.setY(boardWidth);
         rectangle1.setHeight(buttonHeight);
-        rectangle1.setWidth(boardWidth/4);
-        rectangle1.setFill(Color.DARKGRAY);
-        rectangle1.setStroke(Color.BLACK);
+        rectangle1.setWidth(boardWidth/8);
         rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-                                                                    selectedCard = i;
-                                                                    selectedCardLabel.setText(hand[i].getName());
-                                                                });
+            selectedCard[i] = 1;
+            selectedCardLabel.setText(hand[i].getName()+"L");
+        });
+        rectangle1.setFill(Color.DARKGRAY);
+
+        Rectangle rectangle2 = new Rectangle();
+        rectangle2.setHeight(buttonHeight);
+        rectangle2.setWidth(boardWidth/8);
+        rectangle2.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            selectedCard[i] = 2;
+            selectedCardLabel.setText(hand[i].getName()+"R");
+        });
+        rectangle2.setFill(Color.DARKGRAY);
+
+        buttonBox.getChildren().addAll(rectangle1, rectangle2);
+
         makeDarker(rectangle1);
-        pane.getChildren().add(rectangle1);
+        makeDarker(rectangle2);
+        buttonBox.setBorder(new Border(new BorderStroke(Color.BLACK,
+                BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+        pane.getChildren().add(buttonBox);
     }
 
     static void makeDarker(Shape shape){
@@ -411,7 +450,12 @@ public class GameView{
     }
 
     public Cards getSelectedCard() {
-        return hand[selectedCard];
+        for(int i = 0; i < 4; i++){
+            if(selectedCard[i]>0){
+                return hand[i];
+            }
+        }
+        return null;
     }
 
     public void setUserSpace(Space userSpace) {
@@ -476,12 +520,16 @@ public class GameView{
 
     public void removeSelectedCard() {
         for(Label card: cardNameLabels){
-            if(card.getText().matches(hand[selectedCard].getName())){
+            if(card.getText().matches(getSelectedCard().getName())){
                 card.setText("");
                 break;
             }
         }
-        hand[selectedCard] = null;
+        for(int i = 0; i < 4; i++) {
+            if(hand[i].equals(getSelectedCard())){
+                hand[i] = null;
+            }
+        }
     }
 }
 
