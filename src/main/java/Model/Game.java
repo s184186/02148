@@ -91,7 +91,7 @@ public class Game implements Runnable {
                     shuffleCards(users); //If no one has any cards left, hand out some new ones.
                 game.put("gameUpdate", "yourTurn", "", playerTurn, "", "", "");
                 result = "";
-                cardType="";
+                cardType = "";
                 int[] pieces = null;
                 int[] pieceMovesToField = null;
                 while (!result.matches("ok")) {
@@ -102,12 +102,12 @@ public class Game implements Runnable {
 
                     String username = (String) potentialMove[2];
                     Cards card = gson.fromJson((String) potentialMove[3], Cards.class);
-                 pieces = gson.fromJson((String) potentialMove[4], int[].class); // de brikker der bliver flyttet på (deres indekser
-                 pieceMovesToField = gson.fromJson((String) potentialMove[5], int[].class); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
+                    pieces = gson.fromJson((String) potentialMove[4], int[].class); // de brikker der bliver flyttet på (deres indekser
+                    pieceMovesToField = gson.fromJson((String) potentialMove[5], int[].class); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
                     int chosenCard = (int) potentialMove[6];
 
-                     position = pieces[0];
-                     endPosition = position + card.getMoves();
+                    position = pieces[0];
+                    endPosition = position + card.getMoves();
 
                     result = calculateMove(username, card, pieces, pieceMovesToField, chosenCard);
                     game.put("gameUpdate", "turnRequestAck", result, playerTurn,
@@ -279,18 +279,19 @@ public class Game implements Runnable {
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
                     return "illegal move!"; //If you've finished and you're trying to move an opponents piece.
                 }
-                 homefieldPos = getHomeFieldByUsername(username);
+                homefieldPos = getHomeFieldByUsername(username);
                 //check if you have pieces in homecircle
-                        liftPiece(getPlayerByUsername(username).getHomeCirclePos());
-                        for (int j = 0; j < 4; j++) {
-                            if (board[homefieldPos].getPieces()[j] != null)
-                                continue; //If you are already on that field, find an available place for your piece on that field.
-                            if (board[homefieldPos].getPieces()[j] == null) { //if there is room, insert piece there
-                                board[homefieldPos].getPieces()[j] = username; //update board
-                                return "ok";
-                            }
-                        }
-                        break;
+                liftPiece(getPlayerByUsername(username).getHomeCirclePos());
+                for (int j = 0; j < 4; j++) {
+                    if (board[homefieldPos].getPieces()[j] != null)
+                        continue; //If you are already on that field, find an available place for your piece on that field.
+                    if (board[homefieldPos].getPieces()[j] == null) { //if there is room, insert piece there
+                        board[homefieldPos].getPieces()[j] = username; //update board
+                        endPosition = homefieldPos;
+                        return "ok";
+                    }
+                }
+                break;
 
             case SWITCH: //switch pieces
                 if (board[positions[pieces[1]]] == null || board[positions[pieces[0]]] == null || board[positions[pieces[0]]].isLocked() || board[positions[pieces[1]]].isLocked() || board[pieces[1]].isProtect() || board[pieces[0]].isProtect()) {
@@ -300,8 +301,8 @@ public class Game implements Runnable {
                 String tmp2 = board[positions[pieces[1]]].getPieces()[0];
                 board[positions[pieces[1]]].getPieces()[0] = tmp1;
                 board[positions[pieces[0]]].getPieces()[0] = tmp2;
-                startPos[0]=positions[pieces[0]];
-                startPos[1]=positions[pieces[1]];
+                startPos[0] = positions[pieces[0]];
+                startPos[1] = positions[pieces[1]];
                 return "ok";
 
             case EIGHT_H:
@@ -389,7 +390,7 @@ public class Game implements Runnable {
                     //otherwise back to home circle
                     for (int j = 0; j < noOfPlayers; j++) {
                         if (board[15 * (j)].getHomeField().matches(username)) {
-                            endPosition=15*j;
+                            endPosition = 15 * j;
                             for (int k = 0; k < 4; k++) {
                                 if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
                                     board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
@@ -405,7 +406,7 @@ public class Game implements Runnable {
         return "ok";
     }
 
-    private void  update(String username) throws InterruptedException {
+    private void update(String username) throws InterruptedException {
         String pieceindex = gson.toJson(pieceIndexes);
         String position = gson.toJson(positions);
         for (int i = 0; i < noOfPlayers; i++) {
@@ -490,9 +491,10 @@ public class Game implements Runnable {
         if (split) return;
         teamTurnIndex = ++teamTurnIndex % (numberOfTeams + 1); //there is no 0'th team.
         if (teamTurnIndex == 0) teamTurnIndex = 1; //there is no 0'th team.
-        if (teamTurnIndex == startingTeamsNumber){
+        if (teamTurnIndex == startingTeamsNumber) {
             playerTurnIndex = ++playerTurnIndex % getTeamByNumber(teamTurnIndex).size();
-            playerTurn = getTeamByNumber(teamTurnIndex).get(playerTurnIndex).getUsername();}
+            playerTurn = getTeamByNumber(teamTurnIndex).get(playerTurnIndex).getUsername();
+        }
     }
 
     private boolean isPlayerDone(String username) {
@@ -674,42 +676,40 @@ public class Game implements Runnable {
     }
 
     private void movePiece(int[] pieces, int[] pieceMovesToField) { //This updates the positions and pieceindexes array which is used for gameupdates
-       if(pieces.length==2 && pieceMovesToField.length==0){ //in case of switch cards
-        for(int i=0; i<positions.length; i++){
-            if(startPos[0] == positions[i]) {
-                positions[i] = startPos[1];
-                pieceIndexes[0]=i;
+        if (pieces.length == 2 && pieceMovesToField.length == 0) { //in case of switch cards
+            for (int i = 0; i < positions.length; i++) {
+                if (startPos[0] == positions[i]) {
+                    positions[i] = startPos[1];
+                    pieceIndexes[0] = i;
+                }
+                if (startPos[1] == positions[i]) {
+                    positions[i] = startPos[0];
+                    pieceIndexes[1] = i;
+                }
             }
-            if(startPos[1]==positions[i]){
-                positions[i] = startPos[0];
-                pieceIndexes[1]=i;
+        } else if (pieceMovesToField.length > 0) { //in case of a seven.
+            for (int j = 0; j < pieceMovesToField.length; j++) {
+                if (pieceMovesToField[j] > 0) {
+                    positions[pieces[j]] = pieceMovesToField[j];
+                    pieceIndexes[j] = pieces[j];
+                }
             }
+        } else {
+            pieceIndexes = pieces;
+            positions[pieces[0]] = endPosition;
         }
-       }
-      else if(pieceMovesToField.length>0) { //in case of a seven.
-           for (int j = 0; j < pieceMovesToField.length; j++) {
-               if (pieceMovesToField[j] > 0) {
-                   positions[pieces[j]] = pieceMovesToField[j];
-                   pieceIndexes[j] = pieces[j];
-               }
-           }
-       }
-      else {
-           pieceIndexes = pieces;
-           positions[pieces[0]]=endPosition;
-       }
     }
 
-    private int getHomeFieldByUsername(String username){
+    private int getHomeFieldByUsername(String username) {
         for (Player x : players) {
-            if(x.getUsername().matches(username)) return x.getHomePos();
+            if (x.getUsername().matches(username)) return x.getHomePos();
         }
         return -1;
     }
 
-    private Player getPlayerByUsername(String username){
-        for(Player x : players){
-            if(x.getUsername().matches(username)) return x;
+    private Player getPlayerByUsername(String username) {
+        for (Player x : players) {
+            if (x.getUsername().matches(username)) return x;
         }
         return null;
     }
