@@ -101,6 +101,7 @@ public class Game implements Runnable {
                 cardType = "";
                 ArrayList<Integer> pieces = null;
                 ArrayList<Integer> pieceMovesToField = null;
+                Cards card = null;
                 while (!result.matches("ok")) {
                     System.out.println("here1");
                     Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
@@ -111,7 +112,7 @@ public class Game implements Runnable {
                     }.getType();
 
                     String username = (String) potentialMove[2];
-                    Cards card = gson.fromJson((String) potentialMove[3], Cards.class);
+                    card = gson.fromJson((String) potentialMove[3], Cards.class);
                     pieces = gson.fromJson((String) potentialMove[4], listType); // de brikker der bliver flyttet på (deres indekser
                     pieceMovesToField = gson.fromJson((String) potentialMove[5], listType); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
                     int chosenCard = (int) potentialMove[6];
@@ -124,6 +125,7 @@ public class Game implements Runnable {
                             "", "", "");
 
                 }
+                playerHands[getIndexByUsername(playerTurn)].remove(card);
                 movePiece(pieces, pieceMovesToField);
                 update(playerTurn);
                 nextTurn();
@@ -198,6 +200,7 @@ public class Game implements Runnable {
     private void switchCards(Object[] switchInfo) throws InterruptedException {
         Cards card = gson.fromJson((String) switchInfo[3], Cards.class);
         String username = (String) switchInfo[2];
+        playerHands[getIndexByUsername(username)].remove(card);
         int index = getPlayerIndexToTheLeftOfUsername(username);
         playerHands[index].add(4,card);
         String handJson = gson.toJson(new Cards[]{card});
