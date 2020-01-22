@@ -2,13 +2,32 @@ package Model;
 
 public class Player {
     private int team;
-    private int homePos;
+    private int homeFieldPos;
     private String username;
+    private int homeCirclePos;
     private boolean done;
-    public Player(String username, int team, int homePos){
+
+    public int getHomeFieldPos() {
+        return homeFieldPos;
+    }
+
+    public void setHomeFieldPos(int homeFieldPos) {
+        this.homeFieldPos = homeFieldPos;
+    }
+
+    public int getHomeCirclePos() {
+        return homeCirclePos;
+    }
+
+    public void setHomeCirclePos(int homeCirclePos) {
+        this.homeCirclePos = homeCirclePos;
+    }
+
+    public Player(String username, int team, int homeFieldPos, int homeCirclePos){
         this.username=username;
         this.team=team;
-        this.homePos=homePos;
+        this.homeFieldPos=homeFieldPos;
+        this.homeCirclePos=homeCirclePos;
     }
 
     public int getTeam() {
@@ -20,11 +39,11 @@ public class Player {
     }
 
     public int getHomePos() {
-        return homePos;
+        return homeFieldPos;
     }
 
     public void setHomePos(int homePos) {
-        this.homePos = homePos;
+        this.homeFieldPos = homePos;
     }
 
     public String getUsername() {
