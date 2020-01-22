@@ -38,7 +38,7 @@ public class GameView{
 
     private static int version;
     private static int numberOfFields;
-    private static final int startFieldOffset = -7;
+    private static final int startFieldOffset = -8;
 
     private static final int pieceRadius = 25;
     private static final int startFieldRadius = 4*pieceRadius;
