@@ -94,10 +94,21 @@ public class Game implements Runnable {
                     Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
                             new ActualField(playerTurn), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class)
                             , new FormalField(Integer.class)); // A basic move will b e represented by position, the card used and username and extra field.
-                    result = calculateMove(potentialMove);
+
+                    String username = (String) potentialMove[2];
+                    Cards card = gson.fromJson((String)potentialMove[3], Cards.class);
+                    int[] pieces = gson.fromJson((String)potentialMove[4], int[].class); // de brikker der bliver flyttet
+                    int[] pieceMoves = gson.fromJson((String)potentialMove[5], int[].class); //hvor meget de bliver flyttet
+                    int chosenCard = (int) potentialMove[6];
+
+                    int position = pieces[0];
+                    int endPosition = position + card.getMoves();
+
+                    result = calculateMove(username, card, pieces, pieceMoves, chosenCard);
                     game.put("gameUpdate", "turnRequestAck", result, playerTurn,
                             "", "", "");
                     if(result.matches("ok")){
+                        movePiece(position, endPosition);
                         update(playerTurn);
                         nextTurn();
                     }
@@ -177,23 +188,14 @@ public class Game implements Runnable {
         String handJson = gson.toJson(new Cards[] {card});
         game.put("gameUpdate", "getSwitchedCard", username, users[index], handJson, "", "");
     }
-    private String calculateMove(Object[] potentialMove) throws InterruptedException {
+    private String calculateMove(String username, Cards card, int[] pieces, int[] pieceMoves, int chosenCard){
+
         int homefieldPos = -1;
-
-        System.out.println("here2");
-
-        String username = (String) potentialMove[2];
-        Cards card = gson.fromJson((String)potentialMove[3], Cards.class);
-        int[] pieces = gson.fromJson((String)potentialMove[4], int[].class); // de brikker der bliver flyttet
-        int[] pieceMoves = gson.fromJson((String)potentialMove[5], int[].class); //hvor meget de bliver flyttet
-        int chosenCard = (int) potentialMove[6];
         int position = pieces[0];
-
-       //can either represent the piece a user wants to switch positions with, or in case of the card seven, how many moves forward this piece should move
+        //can either represent the piece a user wants to switch positions with, or in case of the card seven, how many moves forward this piece should move
         int endPosition = position + card.getMoves();
 
         switch (card) {
-
             case FOUR: //move backwards
                 if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
@@ -221,7 +223,6 @@ public class Game implements Runnable {
                         continue; //If you are already on that field, find an available place for your piece on that field.
                     if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                         board[endPosition].getPieces()[i] = username; //update board
-                        movePiece(position, endPosition);
                         return "ok";
                     } else {
                         for (int j = 0; j < noOfPlayers; j++) {
@@ -229,7 +230,6 @@ public class Game implements Runnable {
                                 for (int k = 0; k < noOfPlayers; k++) {
                                     if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
                                         board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
-                                        movePiece(position, endPosition);
                                         return "ok";
                                     }
                                 }
@@ -240,6 +240,7 @@ public class Game implements Runnable {
                 }
 
                 break;
+
             case SEVEN: //split. When user uses split, the move is of the form:position, card, username, moves
                 int sum=0;
                 split=true;
@@ -258,12 +259,12 @@ public class Game implements Runnable {
                 }
 
                for(int i=0; i<4; i++){
-                   potentialMove[3] = Cards.getEnumByNoOfMoves(pieceMoves[i]);
-                   potentialMove[4]=positions[pieces[i]];
-                   calculateMove(potentialMove);
+                   calculateMove(username, card, new int[]{positions[pieces[i]]}, new int[]{pieceMoves[i]}, chosenCard);
                }
-                    split=false;
-                    return "split done!";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
+
+                split=false;
+                return "split done!";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
+
             case HEART: //release piece
                 if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
@@ -280,7 +281,6 @@ public class Game implements Runnable {
                                 continue; //If you are already on that field, find an available place for your piece on that field.
                             if (board[15 * i].getPieces()[j] == null) { //if there is room, insert piece there
                                 board[15 * i].getPieces()[j] = username; //update board
-                                movePiece(position, endPosition);
                                 return "ok";
                             }
                         }
@@ -288,29 +288,27 @@ public class Game implements Runnable {
                     }
                 }
                 break;
+
             case SWITCH: //switch pieces
-
-
                 if ( board[positions[pieces[1]]]== null || board[positions[pieces[0]]] == null ||board[positions[pieces[0]]].isLocked() || board[positions[pieces[1]]].isLocked() || board[pieces[1]].isProtect() || board[pieces[0]].isProtect())
                 {
                     return "illegal move!";
                 }
-               String tmp1 = board[positions[pieces[0]]].getPieces()[0];
+                String tmp1 = board[positions[pieces[0]]].getPieces()[0];
                 String tmp2 = board[positions[pieces[1]]].getPieces()[0];
                 board[positions[pieces[1]]].getPieces()[0] = tmp1;
                 board[positions[pieces[0]]].getPieces()[0] = tmp2;
-
-                movePiece(position, endPosition);
                 return "ok";
+
             case EIGHT_H:
                 if(chosenCard == 1){
                     card = EIGHT;
                 } else {
                     card = HEART;
                 }
-                potentialMove[3]=card;
-                calculateMove(potentialMove);
+                calculateMove(username, card, pieces, pieceMoves, chosenCard);
                 break;
+
                 //switch case to default or heart depending on choice
             case THIRT_H:
                 if(chosenCard == 1){
@@ -318,8 +316,7 @@ public class Game implements Runnable {
                 } else {
                     card = HEART;
                 }
-                potentialMove[3]=card;
-                calculateMove(potentialMove);
+                calculateMove(username, card, pieces, pieceMoves, chosenCard);
                 break;
 
             case ONE_FOURT:
@@ -329,8 +326,7 @@ public class Game implements Runnable {
                 } else {
                     card = FOURT;
                 }
-                potentialMove[3]=card;
-                calculateMove(potentialMove);
+                calculateMove(username, card, pieces, pieceMoves, chosenCard);
                 break;
 
             //switch case to default
@@ -353,9 +349,7 @@ public class Game implements Runnable {
                     finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username); //check if player is finished
                     if (isTeamDone(username)) {
                         winningTeam = getTeamNumberByUsername(username);
-                        System.out.println("Team " + winningTeam + " won");
                     }
-                    movePiece(position, endPosition);
                     return "ok";
                 } else if (position % 15 > endPosition % 15) { //if this is the case, you've crossed a homefield
                     homefieldPos = 15 * (endPosition / 15); //figure out the position of homefield crossed
@@ -365,9 +359,7 @@ public class Game implements Runnable {
                         finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username);
                         if (isTeamDone(username)) {
                             winningTeam = getTeamNumberByUsername(username);
-                            System.out.println("Team " + winningTeam + " won");
                         }
-                        movePiece(position, endPosition);
                         return "ok"; //remove card from space/card was valid and has been used
                     }
                     //if it's not your homefield
@@ -389,7 +381,6 @@ public class Game implements Runnable {
                             continue; //If you are already on that field, find an available place for your piece on that field.
                         if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                             board[endPosition].getPieces()[i] = username; //update board
-                            movePiece(position, endPosition);
                             return "ok";
                         }
                     }
@@ -400,7 +391,6 @@ public class Game implements Runnable {
                             for (int k = 0; k < 4; k++) {
                                 if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
                                     board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
-                                    movePiece(position, endPosition);
                                     return "ok";
                                 }
                             }
