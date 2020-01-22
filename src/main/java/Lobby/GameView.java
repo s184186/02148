@@ -17,6 +17,7 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import java.awt.*;
+import java.util.ArrayList;
 
 import static java.lang.Math.round;
 
@@ -250,13 +251,13 @@ public class GameView{
 
         TranslateTransition translateTransition = new TranslateTransition();
         translateTransition.setDuration(Duration.millis(1000));
-        translateTransition.setNode(piece.getCircle());
+        translateTransition.setNode(piece.getStack());
         translateTransition.setByX(x-piece.getCircle().getCenterX()-piece.getCircle().getTranslateX());
         translateTransition.setByY(y-piece.getCircle().getCenterY()-piece.getCircle().getTranslateY());
         translateTransition.setCycleCount(1);
         translateTransition.setAutoReverse(false);
         translateTransition.play();
-        piece.getCircle().toFront();
+        piece.getStack().toFront();
     }
 
     public void resetBoard() {
@@ -277,7 +278,7 @@ public class GameView{
         }
     }
 
-    private void resetSelections() {
+    public void resetSelections() {
         selectedCardLabel.setText("");
         selectedCard = new int[4];
         selectedPiecesLabel.setText("");
@@ -396,6 +397,7 @@ public class GameView{
         StackPane stack = new StackPane();
 
         piece.setCircle(pieceC);
+        piece.setStack(stack);
         piece.setName(pieceIndex+colorName);
         pieceC.setFill(color);
         pieceC.setStroke(Paint.valueOf("black"));
@@ -455,11 +457,13 @@ public class GameView{
         }
     }
 
-    public int[] getSelectedFields() {
-        int[] selectedFieldIndexes = new int[4];
+    public ArrayList<Integer> getSelectedFields() {
+        ArrayList<Integer> selectedFieldIndexes = new ArrayList<>();
         for(int i = 0; i < 4; i++){
             if(selectedField[i] != null) {
-                selectedFieldIndexes[i] = selectedField[i].getIndex();
+                selectedFieldIndexes.add(selectedField[i].getIndex());
+            } else {
+                break;
             }
         }
         return selectedFieldIndexes;
@@ -483,11 +487,13 @@ public class GameView{
         return -1;
     }
 
-    public int[] getSelectedPieces() {
-        int[] selectedPieceIndexes = new int[4];
+    public ArrayList<Integer> getSelectedPieces() {
+        ArrayList<Integer> selectedPieceIndexes = new ArrayList<>();
         for(int i = 0; i < 4; i++){
             if(selectedPiece[i] != null) {
-                selectedPieceIndexes[i] = selectedPiece[i].getCurrentField().getIndex();
+                selectedPieceIndexes.add(selectedPiece[i].getIndex());
+            } else {
+                break;
             }
         }
         return selectedPieceIndexes;
@@ -605,7 +611,7 @@ class GameUpdater implements Runnable{
                     case "playerMove":
                         for (int i = 0; i < pieceIndexes.length; i++) {
                             int finalI = i;
-                            Platform.runLater(() -> gameView.moveTo(gameView.getPieces()[pieceIndexes[finalI]], gameView.getFields()[positions[finalI]]));
+                            Platform.runLater(() -> gameView.moveTo(gameView.getPieces()[pieceIndexes[finalI]], gameView.getFields()[positions[pieceIndexes[finalI]]]));
                         }
                         break;
 
@@ -616,6 +622,7 @@ class GameUpdater implements Runnable{
                         cardJson = gson.toJson(gameView.getSelectedCard());
 
                         gameView.removeSelectedCard();
+                        Platform.runLater(() ->gameView.resetSelections());
                         game.put("gameRequest", "switchCard", username, cardJson, "");
                         break;
 
@@ -650,6 +657,7 @@ class GameUpdater implements Runnable{
                                 gameView.removeSelectedCard();
                                 break;
                             }
+                            Platform.runLater(() ->gameView.resetSelections());
                             System.out.println("Move illegal");
                         }
                         break;
@@ -669,6 +677,7 @@ class Piece{
     private Field currentField;
     private String name;
     private int index;
+    private StackPane stack;
 
     Piece(int index) {
         this.index = index;
@@ -689,6 +698,10 @@ class Piece{
     public void setCircle(Circle circle) {
         this.circle = circle;
     }
+
+    public StackPane getStack(){return stack;}
+    
+    public void setStack(StackPane stack){this.stack = stack;}
 
     public String getName() {
         return name;
