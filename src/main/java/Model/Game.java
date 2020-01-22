@@ -202,7 +202,7 @@ public class Game implements Runnable {
         String username = (String) switchInfo[2];
         playerHands[getIndexByUsername(username)].remove(card);
         int index = getPlayerIndexToTheLeftOfUsername(username);
-        playerHands[index].add(4,card);
+        playerHands[index].add(card);
         String handJson = gson.toJson(new Cards[]{card});
         game.put("gameUpdate", "getSwitchedCard", username, users[index], handJson, "", "");
     }
@@ -216,6 +216,8 @@ public class Game implements Runnable {
 
         switch (card) {
             case FOUR: //move backwards
+                if(position>59) return "illegal move!"; // you can't move something in the homecircles with a number card
+
                 if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
                 }//If you haven't finished but you're trying to move another person's pieces, it's illegal.
@@ -266,7 +268,8 @@ public class Game implements Runnable {
                 int sum = 0;
                 split = true;
 
-                if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
+                if(position>75) return "illegal move!";
+                if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
                 }
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
@@ -354,6 +357,7 @@ public class Game implements Runnable {
 
             //switch case to default
             default: //Default corresponds to all enums with the function fw/forward
+                if(position>75) return "illegal move!"; // you can't move something in the homecircles with a number card
                 if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username) {
                     return "illegal move!"; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 }
@@ -455,7 +459,7 @@ public class Game implements Runnable {
             for (int j = 0; j < 4; j++) { // through each piece
                 ArrayList<Integer> test = new ArrayList<Integer>();
                 test.add(pieces[j]);
-                if (calculateMove(username, hand.get(i), test, null, 1).matches("ok")) {
+                if (calculateMove(username, hand.get(i), test, null, 1).matches("ok") || calculateMove(username, hand.get(i), test, null, 0).matches("ok")  ) {
                     readOnly=false;
                     return true;
                 }
@@ -495,7 +499,6 @@ public class Game implements Runnable {
                 return true;
             }
         }
-        readOnly=false;
         System.out.println("SKIP!");
         return false;
     }
