@@ -27,11 +27,6 @@ import org.jspace.Space;
 
 public class GameView{
 
-    public StackPane stackPane;
-    public Pane pane;
-    public Label card1, card2, card3, card4, label;
-    private Label[] cardNameLabels;
-
     private static final int boardWidth = 900;
     private static final int buttonHeight = 100;
     private static final int boardHeight = boardWidth+buttonHeight;
@@ -49,6 +44,20 @@ public class GameView{
     private static final int outerCircleBorderPadding = 150;
     private static final int innerCircleBorderPadding = outerCircleBorderPadding+250;
 
+    static final Color blue = Color.rgb(61,88,222);
+    static final Color purple = Color.rgb(162,19,192);
+    static final Color red = Color.rgb(219,35,35);
+    static final Color orange = Color.rgb(255,149,23);
+    static final Color yellow = Color.rgb(233,227,23);
+    static final Color green  = Color.rgb(24,170,24);
+
+    public StackPane stackPane;
+    public Pane pane;
+    public Label card1, card2, card3, card4, label;
+
+    private Label[] cardNameLabels, usernameLabels;
+    private Label selectedCardLabel, selectedPiecesLabel, selectedFieldsLabel;
+
     private static int pieceIndex = 0;
     private Piece[] pieces = new Piece[24];
 
@@ -60,17 +69,8 @@ public class GameView{
     private Field[] selectedField = new Field[4];
     private int[] selectedCard = new int[4];
     String currentMove = "";
-
-    private Label selectedCardLabel, selectedPiecesLabel, selectedFieldsLabel;
-
     private String[] colorNames;
     private Color[] colors;
-    static Color blue = Color.rgb(61,88,222);
-    static Color purple = Color.rgb(162,19,192);
-    static Color red = Color.rgb(219,35,35);
-    static Color orange = Color.rgb(255,149,23);
-    static Color yellow = Color.rgb(233,227,23);
-    static Color green  = Color.rgb(24,170,24);
     private Space gameSpace;
     private String username;
     private Space userSpace;
@@ -79,7 +79,6 @@ public class GameView{
     private String[] users;
     private int[] teams;
     private int numberOfTeams;
-    private Label[] usernameLabels;
 
     public void initialize(){
 
@@ -138,15 +137,6 @@ public class GameView{
             cardNameLabels[i].setLayoutY(boardHeight - 75 - cardNameLabels[i].getPrefHeight() / 2);
             cardNameLabels[i].toFront();
         }
-    }
-
-    private void resetSelections() {
-        selectedCardLabel.setText("");
-        selectedCard = new int[4];
-        selectedPiecesLabel.setText("");
-        selectedPiece = new Piece[4];
-        selectedFieldsLabel.setText("");
-        selectedField = new Field[4];
     }
 
     public void setup(){
@@ -285,6 +275,15 @@ public class GameView{
                 piece.setCurrentField(null);
             }
         }
+    }
+
+    private void resetSelections() {
+        selectedCardLabel.setText("");
+        selectedCard = new int[4];
+        selectedPiecesLabel.setText("");
+        selectedPiece = new Piece[4];
+        selectedFieldsLabel.setText("");
+        selectedField = new Field[4];
     }
 
     private void confirmMove() {
@@ -442,20 +441,28 @@ public class GameView{
         drawPiece(x, y+pieceRadius,colors[n], colorName).setCurrentField(startField);
     }
 
-    public void setGameSpace(Space gameSpace) {
-        this.gameSpace = gameSpace;
+    public void removeSelectedCard() {
+        for(Label card: cardNameLabels){
+            if(card.getText().matches(getSelectedCard().getName())){
+                Platform.runLater(() -> card.setText(""));
+                break;
+            }
+        }
+        for(int i = 0; i < 4; i++) {
+            if(hand[i].equals(getSelectedCard())){
+                hand[i] = null;
+            }
+        }
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Field[] getFields() {
-        return this.fields;
-    }
-
-    public void setCurrentMove(String type) {
-        this.currentMove = type;
+    public int[] getSelectedFields() {
+        int[] selectedFieldIndexes = new int[4];
+        for(int i = 0; i < 4; i++){
+            if(selectedField[i] != null) {
+                selectedFieldIndexes[i] = selectedField[i].getIndex();
+            }
+        }
+        return selectedFieldIndexes;
     }
 
     public Cards getSelectedCard() {
@@ -474,6 +481,32 @@ public class GameView{
             }
         }
         return -1;
+    }
+
+    public int[] getSelectedPieces() {
+        int[] selectedPieceIndexes = new int[4];
+        for(int i = 0; i < 4; i++){
+            if(selectedPiece[i] != null) {
+                selectedPieceIndexes[i] = selectedPiece[i].getCurrentField().getIndex();
+            }
+        }
+        return selectedPieceIndexes;
+    }
+
+    public void setGameSpace(Space gameSpace) {
+        this.gameSpace = gameSpace;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Field[] getFields() {
+        return this.fields;
+    }
+
+    public void setCurrentMove(String type) {
+        this.currentMove = type;
     }
 
     public void setUserSpace(Space userSpace) {
@@ -512,16 +545,6 @@ public class GameView{
         return this.pieces;
     }
 
-    public int[] getSelectedPieces() {
-        int[] selectedPieceIndexes = new int[4];
-        for(int i = 0; i < 4; i++){
-            if(selectedPiece[i] != null) {
-                selectedPieceIndexes[i] = selectedPiece[i].getCurrentField().getIndex();
-            }
-        }
-        return selectedPieceIndexes;
-    }
-
     public void setHostName(String host) {
         this.host = host;
     }
@@ -540,30 +563,6 @@ public class GameView{
 
     public void setNumberOfTeams(int numberOfTeams) {
         this.numberOfTeams = numberOfTeams;
-    }
-
-    public void removeSelectedCard() {
-        for(Label card: cardNameLabels){
-            if(card.getText().matches(getSelectedCard().getName())){
-                Platform.runLater(() -> card.setText(""));
-                break;
-            }
-        }
-        for(int i = 0; i < 4; i++) {
-            if(hand[i].equals(getSelectedCard())){
-                hand[i] = null;
-            }
-        }
-    }
-
-    public int[] getSelectedFields() {
-        int[] selectedFieldIndexes = new int[4];
-        for(int i = 0; i < 4; i++){
-            if(selectedField[i] != null) {
-                selectedFieldIndexes[i] = selectedField[i].getIndex();
-            }
-        }
-        return selectedFieldIndexes;
     }
 }
 
