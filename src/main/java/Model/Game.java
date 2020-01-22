@@ -294,7 +294,7 @@ public class Game implements Runnable {
                 return "split done!";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
 
             case HEART: //release piece
-                if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
+                if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
 
                 }
