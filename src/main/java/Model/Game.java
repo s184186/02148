@@ -305,8 +305,7 @@ public class Game implements Runnable {
                 } else {
                     card = HEART;
                 }
-                calculateMove(username, card, pieces, pieceMoves, chosenCard);
-                break;
+                return calculateMove(username, card, pieces, pieceMoves, chosenCard);
 
             //switch case to default or heart depending on choice
             case THIRT_H:
@@ -315,8 +314,7 @@ public class Game implements Runnable {
                 } else {
                     card = HEART;
                 }
-                calculateMove(username, card, pieces, pieceMoves, chosenCard);
-                break;
+                return calculateMove(username, card, pieces, pieceMoves, chosenCard);
 
             case ONE_FOURT:
                 //switch case to default or heart depending on choice
@@ -325,8 +323,7 @@ public class Game implements Runnable {
                 } else {
                     card = FOURT;
                 }
-                calculateMove(username, card, pieces, pieceMoves, chosenCard);
-                break;
+                return calculateMove(username, card, pieces, pieceMoves, chosenCard);
 
             //switch case to default
             default: //Default corresponds to all enums with the function fw/forward

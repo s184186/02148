@@ -202,21 +202,21 @@ public class GameView{
 
             if(i%15 == 0){
                 int n = i/15;
-                usernameLabels[n]=new Label();
+                usernameLabels[(n+3)%4]=new Label();
                 try{
-                    usernameLabels[n].setText(users[n]);
+                    usernameLabels[(n+3)%4].setText(users[n]);
                     if(users[n].matches(username)){
-                        usernameLabels[n].setStyle("-fx-font-weight: bold");
+                        usernameLabels[(n+3)%4].setStyle("-fx-font-weight: bold");
                     }
                 } catch (Exception e) {
 
                 }
-                usernameLabels[n].setPrefHeight(15);
-                usernameLabels[n].setPrefWidth(100);
-                usernameLabels[n].setLayoutX(xUsernameLabels-usernameLabels[n].getPrefWidth()/2);
-                usernameLabels[n].setLayoutY(yUsernameLabels-usernameLabels[n].getPrefHeight()/2);
-                usernameLabels[n].setAlignment(Pos.CENTER);
-                pane.getChildren().add(usernameLabels[n]);
+                usernameLabels[(n+3)%4].setPrefHeight(15);
+                usernameLabels[(n+3)%4].setPrefWidth(100);
+                usernameLabels[(n+3)%4].setLayoutX(xUsernameLabels-usernameLabels[(n+3)%4].getPrefWidth()/2);
+                usernameLabels[(n+3)%4].setLayoutY(yUsernameLabels-usernameLabels[(n+3)%4].getPrefHeight()/2);
+                usernameLabels[(n+3)%4].setAlignment(Pos.CENTER);
+                pane.getChildren().add(usernameLabels[(n+3)%4]);
                 drawEndFields(xEndFields, yEndFields, endFieldRadius, n, endFieldSizeDec, endFieldDistance*v, endFieldDistance*w);
                 drawStartPieces(xStartFields, yStartFields, n,colorNames[n]);
             }
@@ -639,7 +639,7 @@ class GameUpdater implements Runnable{
                             userSpace.get(new ActualField("confirmMove"));
 
                             cardJson = gson.toJson(gameView.getSelectedCard());
-                            int selectedCardOption = gameView.getSelectedCardOption() - 1;
+                            int selectedCardOption = gameView.getSelectedCardOption();
                             String piecesJson = gson.toJson(gameView.getSelectedPieces());
 
                             String fieldsJson = gson.toJson(gameView.getSelectedFields());
