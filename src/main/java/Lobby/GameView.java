@@ -2,6 +2,7 @@ package Lobby;
 
 import Model.Cards;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -17,6 +18,7 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import java.awt.*;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 
 import static java.lang.Math.round;
@@ -25,6 +27,8 @@ import javafx.geometry.Insets;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.Space;
+
+import javax.smartcardio.Card;
 
 public class GameView{
 
@@ -593,13 +597,15 @@ class GameUpdater implements Runnable{
 
         try {
             while (true) {
+                Type listType = new TypeToken<ArrayList<Cards>>() {
+                }.getType();
 
                 Object[] gameUpdate = game.get(new ActualField("gameUpdate"), new FormalField(String.class), new FormalField(String.class),
                             new ActualField(username), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
 
                 String type = (String) gameUpdate[1];
                 String actor = (String) gameUpdate[2];
-                Cards[] cards = gson.fromJson((String) gameUpdate[4], Cards[].class);
+                ArrayList<Cards> cards = gson.fromJson((String) gameUpdate[4], listType);
                 int[] pieceIndexes = gson.fromJson((String) gameUpdate[5], int[].class);
                 int[] positions = gson.fromJson((String) gameUpdate[6], int[].class);
 

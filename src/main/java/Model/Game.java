@@ -39,7 +39,7 @@ public class Game implements Runnable {
     private int numberOfTeams;
     private int needCardsCounter;
     private String cardType;
-    private Cards[][] playerHands;
+    private ArrayList<Cards>[] playerHands;
     private Integer[] pieceIndexes;
     private Gson gson = new Gson();
     private ArrayList<Player> players = new ArrayList<>();
@@ -59,7 +59,10 @@ public class Game implements Runnable {
         this.version = version;
         this.finished = new boolean[noOfPlayers];
         this.justStarted = true;
-        this.playerHands = new Cards[noOfPlayers][5];
+        this.playerHands = new ArrayList[noOfPlayers];
+        for (int i = 0; i < noOfPlayers; i++) {
+            playerHands[i] = new ArrayList<Cards>();
+        }
         this.positions = new int[noOfPlayers * 4];
         this.pieceIndexes = new Integer[noOfPlayers * 4];
     }
@@ -156,21 +159,18 @@ public class Game implements Runnable {
         if (deck == null || getCardsLeftInDeck() < noOfPlayers * 4) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
             setupDeck();
         }
-        Cards[] hand = new Cards[5];
+        ArrayList<Cards> hand = new ArrayList<>();
         Random random = new Random();
         for (int i = 0; i < noOfPlayers; i++) {
-            for (int j = 0; j < 4; j++) {
                 int index = random.nextInt(decksize);
                 int amount = deck.get(index).getAmount();
                 deck.get(index).setAmount(amount - 1);
-                hand[j] = deck.get(index).getCard();
+                hand.add(deck.get(index).getCard());
                 if (amount == 1) { //if last card of a specific type in deck, this type will be removed
                     deck.remove(index);
                     decksize--;
                 }
-
-            }
-            playerHands[i] = hand;
+            playerHands[i]=hand;
             String handJson = gson.toJson(hand);
             game.put("gameUpdate", "hand", "", users[i], handJson, "", ""); //Each user's hand is put in the tuple space. The users name is the id factor.
         }
@@ -196,7 +196,7 @@ public class Game implements Runnable {
         Cards card = gson.fromJson((String) switchInfo[3], Cards.class);
         String username = (String) switchInfo[2];
         int index = getPlayerIndexToTheLeftOfUsername(username);
-        playerHands[index][4] = card;
+        playerHands[index].add(4,card);
         String handJson = gson.toJson(new Cards[]{card});
         game.put("gameUpdate", "getSwitchedCard", username, users[index], handJson, "", "");
     }
@@ -232,7 +232,7 @@ public class Game implements Runnable {
                     endPosition = endPosition % (noOfPlayers * 15);
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (board[endPosition].getPieces()[i].equals(username))
+                    if (board[endPosition].getPieces()[i].matches(username))
                         continue; //If you are already on that field, find an available place for your piece on that field.
                     if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                        if(readOnly) return "ok";
@@ -396,13 +396,13 @@ public class Game implements Runnable {
                 //Now we place your piece on its end position. There is no one already on this field, so you move to the field.
                 if (homefieldPos == -1) { //If you aren't passing your own homefield.
                     for (int i = 0; i < 4; i++) {
-                        if (board[endPosition].getPieces()[i].equals(username))
-                            continue; //If you are already on that field, find an available place for your piece on that field.
                         if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                             if(readOnly) return "ok";
                             board[endPosition].getPieces()[i] = username; //update board
                             return "ok";
                         }
+                        if (board[endPosition].getPieces()[i].matches(username))
+                            continue; //If you are already on that field, find an available place for your piece on that field.
                     }
                 } else {
                     //otherwise back to home circle
@@ -426,13 +426,12 @@ public class Game implements Runnable {
 
     private boolean canUserMakeMove(String username) throws InterruptedException {
         readOnly=true;
-        Cards[] hand = playerHands[getPlayerIndex(username)];
+        ArrayList<Cards> hand = playerHands[getPlayerIndex(username)];
         int[] piecesPositions = new int[4];
         int[] pieces = new int[4];
         int switchIndex = -1;
         int splitIndex = -1;
         int counter = 0;
-        int maxMoves;
         int[] maxMovesArr = new int[4];
         for (int k = 0; k < noOfPlayers * 4; k++) {
             if (board[positions[k]].getPieces()[0].matches(username)) {
@@ -442,15 +441,15 @@ public class Game implements Runnable {
             }
         }
         for (int i = 0; i < 4; i++) {
-            if (hand[i].getName().matches("Switch")) switchIndex = i;
-            if (hand[i].getName().matches("Seven")) splitIndex = i;
+            if (hand.get(i).getName().matches("Switch")) switchIndex = i;
+            if (hand.get(i).getName().matches("Seven")) splitIndex = i;
         }
 
         for (int i = 0; i < 4; i++) { // go through each card
             for (int j = 0; j < 4; j++) { // through each piece
                 ArrayList<Integer> test = new ArrayList<Integer>();
                 test.add(pieces[j]);
-                if (calculateMove(username, hand[i], test, null, 1).matches("ok")) {
+                if (calculateMove(username, hand.get(i), test, null, 1).matches("ok")) {
                     readOnly=false;
                     return true;
                 }
@@ -462,7 +461,7 @@ public class Game implements Runnable {
                     ArrayList<Integer> test = new ArrayList<Integer>();
                     test.add(j);
                     test.add(i);
-                    if (calculateMove(username, hand[switchIndex], test, null, 0).matches("ok")) {
+                    if (calculateMove(username, hand.get(switchIndex), test, null, 0).matches("ok")) {
                         readOnly=false;
                         return true;
                     }
@@ -491,6 +490,7 @@ public class Game implements Runnable {
             }
         }
         readOnly=false;
+        System.out.println("SKIP!");
         return false;
     }
 
