@@ -522,7 +522,7 @@ public class GameView{
         this.userSpace = userSpace;
     }
 
-    public void setHand(ArrayList<Cards> hand) {
+    private void setCardLabels(){
         Platform.runLater(
                 () -> {
                     for(int i = 0; i < 4; i++){
@@ -530,22 +530,16 @@ public class GameView{
                     }
                 }
         );
+    }
+
+    public void setHand(ArrayList<Cards> hand) {
+        setCardLabels();
         this.hand = hand;
     }
 
     public void addCardToHand(Cards newCard) {
-        Platform.runLater(
-                () -> {
-                    hand.add(newCard);
-                    for(int i = 0; i < 4; i++){
-                        if(cardNameLabels[i].getText().matches("")){
-                            cardNameLabels[i].setText(newCard.getName());
-                            break;
-                        }
-                    }
-                }
-        );
-
+        hand.add(newCard);
+        setCardLabels();
     }
 
     public Piece[] getPieces(){
