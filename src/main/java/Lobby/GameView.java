@@ -28,8 +28,6 @@ import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.Space;
 
-import javax.smartcardio.Card;
-
 public class GameView{
 
     private static final int boardWidth = 900;
@@ -79,7 +77,7 @@ public class GameView{
     private Space gameSpace;
     private String username;
     private Space userSpace;
-    private Cards[] hand = new Cards[5];
+    private ArrayList<Cards> hand = new ArrayList<>();
     private String host;
     private String[] users;
     private int[] teams;
@@ -363,7 +361,7 @@ public class GameView{
         rectangle1.setWidth(boardWidth/8);
         rectangle1.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             selectedCard[i] = 1;
-            selectedCardLabel.setText(hand[i].getName()+"L");
+            selectedCardLabel.setText(hand.get(i).getName()+"L");
         });
         rectangle1.setFill(Color.DARKGRAY);
 
@@ -372,7 +370,7 @@ public class GameView{
         rectangle2.setWidth(boardWidth/8);
         rectangle2.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             selectedCard[i] = 2;
-            selectedCardLabel.setText(hand[i].getName()+"R");
+            selectedCardLabel.setText(hand.get(i).getName()+"R");
         });
         rectangle2.setFill(Color.DARKGRAY);
 
@@ -455,8 +453,8 @@ public class GameView{
             }
         }
         for(int i = 0; i < 4; i++) {
-            if(hand[i].equals(getSelectedCard())){
-                hand[i] = null;
+            if(hand.get(i).equals(getSelectedCard())){
+                hand.remove(i);
             }
         }
     }
@@ -476,7 +474,7 @@ public class GameView{
     public Cards getSelectedCard() {
         for(int i = 0; i < 4; i++){
             if(selectedCard[i]>0){
-                return hand[i];
+                return hand.get(i);
             }
         }
         return null;
@@ -523,11 +521,11 @@ public class GameView{
         this.userSpace = userSpace;
     }
 
-    public void setHand(Cards[] hand) {
+    public void setHand(ArrayList<Cards> hand) {
         Platform.runLater(
                 () -> {
                     for(int i = 0; i < 4; i++){
-                        cardNameLabels[i].setText(hand[i].getName());
+                        cardNameLabels[i].setText(hand.get(i).getName());
                     }
                 }
         );
@@ -537,10 +535,8 @@ public class GameView{
     public void addCardToHand(Cards newCard) {
         Platform.runLater(
                 () -> {
+                    hand.add(newCard);
                     for(int i = 0; i < 4; i++){
-                        if(hand[i] == null){
-                            hand[i] = newCard;
-                        }
                         if(cardNameLabels[i].getText().matches("")){
                             cardNameLabels[i].setText(newCard.getName());
                             break;
@@ -637,8 +633,8 @@ class GameUpdater implements Runnable{
                         break;
 
                     case "getSwitchedCard":
-                        System.out.println(actor + cards[0].getName());
-                        gameView.addCardToHand(cards[0]);
+                        System.out.println(actor + cards.get(0).getName());
+                        gameView.addCardToHand(cards.get(0));
                         break;
 
                     case "resetBoard":
