@@ -8,18 +8,17 @@ import org.jspace.Space;
 import java.util.*;
 
 import static Model.Cards.*;
-import static Model.Templates.*;
 
 public class Game implements Runnable {
     private int noOfPlayers;
     private int lower = -1;
     private int upper = -2;
     private int offset;
-    private int splitMovesCounter = 0;
     private int version;
     private boolean split;
     private String result;
-    private ArrayList<Integer> splitPosition;
+    private int position;
+    private int endPosition;
     private String[] users;
     private boolean[] finished;
     private Space game;
@@ -38,6 +37,7 @@ public class Game implements Runnable {
     private Cards[][] playerHands;
     private int[] pieceIndexes;
     private Gson gson = new Gson();
+    private ArrayList<Player> players = new ArrayList<>();
     private ArrayList<Player> teamOne = new ArrayList<>();
     private ArrayList<Player> teamTwo = new ArrayList<>();
     private ArrayList<Player> teamThree = new ArrayList<>();
@@ -54,9 +54,9 @@ public class Game implements Runnable {
         this.version = version;
         this.finished = new boolean[noOfPlayers];
         this.justStarted = true;
-        this.playerHands= new Cards[noOfPlayers][5];
-        this.positions = new int[noOfPlayers*4];
-        this.pieceIndexes= new int[noOfPlayers*4];
+        this.playerHands = new Cards[noOfPlayers][5];
+        this.positions = new int[noOfPlayers * 4];
+        this.pieceIndexes = new int[noOfPlayers * 4];
     }
 
     @Override
@@ -66,22 +66,22 @@ public class Game implements Runnable {
             setupBoard();
             shuffleCards(users);
             for (int i = 0; i < noOfPlayers; i++) {
-                game.put("gameUpdate","switchCard", "", users[i],"","", "");
+                game.put("gameUpdate", "switchCard", "", users[i], "", "", "");
             }
-             //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
+            //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
             Object[][] switchInfos = new Object[noOfPlayers][];
             for (int i = 0; i < noOfPlayers; i++) {
-                switchInfos[i] = game.get(new ActualField("gameRequest"),new ActualField("switchCard"),
-                                                new ActualField(users[i]),new FormalField(String.class),new FormalField(String.class)); //switch req consits of from, to and card fields
+                switchInfos[i] = game.get(new ActualField("gameRequest"), new ActualField("switchCard"),
+                        new ActualField(users[i]), new FormalField(String.class), new FormalField(String.class)); //switch req consits of from, to and card fields
             }
-            for(Object[] switchInfo: switchInfos){
+            for (Object[] switchInfo : switchInfos) {
                 switchCards(switchInfo);
             }
             // Move will be represented by position, the card used and username.
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        while (winningTeam==-1) {
+        while (winningTeam == -1) {
             try {
                 if (game.getp(new ActualField("need cards")) != null)
                     needCardsCounter++; //counter that increments when a user needs cards.
@@ -89,25 +89,25 @@ public class Game implements Runnable {
                     shuffleCards(users); //If no one has any cards left, hand out some new ones.
                 game.put("gameUpdate", "yourTurn", "", playerTurn, "", "", "");
                 result = "";
-                while(!result.matches("ok")) {
+                while (!result.matches("ok")) {
                     System.out.println("here1");
                     Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
                             new ActualField(playerTurn), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class)
                             , new FormalField(Integer.class)); // A basic move will b e represented by position, the card used and username and extra field.
 
                     String username = (String) potentialMove[2];
-                    Cards card = gson.fromJson((String)potentialMove[3], Cards.class);
-                    int[] pieces = gson.fromJson((String)potentialMove[4], int[].class); // de brikker der bliver flyttet
-                    int[] pieceMoves = gson.fromJson((String)potentialMove[5], int[].class); //hvor meget de bliver flyttet
+                    Cards card = gson.fromJson((String) potentialMove[3], Cards.class);
+                    int[] pieces = gson.fromJson((String) potentialMove[4], int[].class); // de brikker der bliver flyttet
+                    int[] pieceMoves = gson.fromJson((String) potentialMove[5], int[].class); //hvor meget de bliver flyttet
                     int chosenCard = (int) potentialMove[6];
 
-                    int position = pieces[0];
-                    int endPosition = position + card.getMoves();
+                     position = pieces[0];
+                     endPosition = position + card.getMoves();
 
                     result = calculateMove(username, card, pieces, pieceMoves, chosenCard);
                     game.put("gameUpdate", "turnRequestAck", result, playerTurn,
                             "", "", "");
-                    if(result.matches("ok")){
+                    if (result.matches("ok")) {
                         movePiece(position, endPosition);
                         update(playerTurn);
                         nextTurn();
@@ -142,7 +142,7 @@ public class Game implements Runnable {
     }
 
     private void shuffleCards(Object[] users) throws InterruptedException { //Cards are shuffled and handed out to users and the player to start is chosen
-        if (deck==null||getCardsLeftInDeck() < noOfPlayers * 4) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
+        if (deck == null || getCardsLeftInDeck() < noOfPlayers * 4) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
             setupDeck();
         }
         Cards[] hand = new Cards[5];
@@ -179,16 +179,18 @@ public class Game implements Runnable {
         }
         return cardsleft;
     }
+
     // update playerHands
     private void switchCards(Object[] switchInfo) throws InterruptedException {
         Cards card = gson.fromJson((String) switchInfo[3], Cards.class);
         String username = (String) switchInfo[2];
         int index = getPlayerIndexToTheLeftOfUsername(username);
         playerHands[index][4] = card;
-        String handJson = gson.toJson(new Cards[] {card});
+        String handJson = gson.toJson(new Cards[]{card});
         game.put("gameUpdate", "getSwitchedCard", username, users[index], handJson, "", "");
     }
-    private String calculateMove(String username, Cards card, int[] pieces, int[] pieceMoves, int chosenCard){
+
+    private String calculateMove(String username, Cards card, int[] pieces, int[] pieceMoves, int chosenCard) {
 
         int homefieldPos = -1;
         int position = pieces[0];
@@ -242,8 +244,8 @@ public class Game implements Runnable {
                 break;
 
             case SEVEN: //split. When user uses split, the move is of the form:position, card, username, moves
-                int sum=0;
-                split=true;
+                int sum = 0;
+                split = true;
 
                 if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
@@ -251,18 +253,18 @@ public class Game implements Runnable {
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
                     return "illegal move!";
                 }
-                for(int i=0; i<4; i++){
-                    sum+=pieceMoves[i];
+                for (int i = 0; i < 4; i++) {
+                    sum += pieceMoves[i];
                 }
-                if(sum!=7){
+                if (sum != 7) {
                     return "illegal move!";
                 }
 
-               for(int i=0; i<4; i++){
-                   calculateMove(username, card, new int[]{positions[pieces[i]]}, new int[]{pieceMoves[i]}, chosenCard);
-               }
+                for (int i = 0; i < 4; i++) {
+                    calculateMove(username, card, new int[]{positions[pieces[i]]}, new int[]{pieceMoves[i]}, chosenCard);
+                }
 
-                split=false;
+                split = false;
                 return "split done!";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
 
             case HEART: //release piece
@@ -273,25 +275,22 @@ public class Game implements Runnable {
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
                     return "illegal move!"; //If you've finished and you're trying to move an opponents piece.
                 }
-                for (int i = 0; i < noOfPlayers; i++) {
-                    if (board[noOfPlayers * 15 + noOfPlayers * 4 + i].getPieces()[3 - i] != null && board[15 * (i)].getHomeField().matches(username)) { //If you use a card and you have pieces in homecircles left to use it on.
-                        liftPiece(noOfPlayers * 15 + noOfPlayers * 4 + i);
+                
+                 homefieldPos = getHomeFieldByUsername(username);
+                //check if you have pieces in homecircle
+                        liftPiece(getPlayerByUsername(username).getHomeCirclePos());
                         for (int j = 0; j < 4; j++) {
-                            if (board[15 * i].getPieces()[j] != null && board[15 * i].getPieces()[j].matches(username))
+                            if (board[homefieldPos].getPieces()[j] != null)
                                 continue; //If you are already on that field, find an available place for your piece on that field.
-                            if (board[15 * i].getPieces()[j] == null) { //if there is room, insert piece there
-                                board[15 * i].getPieces()[j] = username; //update board
+                            if (board[homefieldPos].getPieces()[j] == null) { //if there is room, insert piece there
+                                board[homefieldPos].getPieces()[j] = username; //update board
                                 return "ok";
                             }
                         }
                         break;
-                    }
-                }
-                break;
 
             case SWITCH: //switch pieces
-                if ( board[positions[pieces[1]]]== null || board[positions[pieces[0]]] == null ||board[positions[pieces[0]]].isLocked() || board[positions[pieces[1]]].isLocked() || board[pieces[1]].isProtect() || board[pieces[0]].isProtect())
-                {
+                if (board[positions[pieces[1]]] == null || board[positions[pieces[0]]] == null || board[positions[pieces[0]]].isLocked() || board[positions[pieces[1]]].isLocked() || board[pieces[1]].isProtect() || board[pieces[0]].isProtect()) {
                     return "illegal move!";
                 }
                 String tmp1 = board[positions[pieces[0]]].getPieces()[0];
@@ -301,7 +300,7 @@ public class Game implements Runnable {
                 return "ok";
 
             case EIGHT_H:
-                if(chosenCard == 1){
+                if (chosenCard == 1) {
                     card = EIGHT;
                 } else {
                     card = HEART;
@@ -309,9 +308,9 @@ public class Game implements Runnable {
                 calculateMove(username, card, pieces, pieceMoves, chosenCard);
                 break;
 
-                //switch case to default or heart depending on choice
+            //switch case to default or heart depending on choice
             case THIRT_H:
-                if(chosenCard == 1){
+                if (chosenCard == 1) {
                     card = THIRT;
                 } else {
                     card = HEART;
@@ -321,7 +320,7 @@ public class Game implements Runnable {
 
             case ONE_FOURT:
                 //switch case to default or heart depending on choice
-                if(chosenCard == 1){
+                if (chosenCard == 1) {
                     card = Cards.ONE;
                 } else {
                     card = FOURT;
@@ -404,9 +403,9 @@ public class Game implements Runnable {
 
     private void update(String username) throws InterruptedException {
         String pieceindex = gson.toJson(pieceIndexes);
-        String position =  gson.toJson(positions);
-        for(int i=0; i<noOfPlayers; i++){
-            game.put("gameUpdate", "playerMove", username, users[i],  "", pieceindex, position); // empty field is cards
+        String position = gson.toJson(positions);
+        for (int i = 0; i < noOfPlayers; i++) {
+            game.put("gameUpdate", "playerMove", username, users[i], "", pieceindex, position); // empty field is cards
         }
     }
 
@@ -484,7 +483,7 @@ public class Game implements Runnable {
     }
 
     private void nextTurn() {
-        if(split) return;
+        if (split) return;
         teamTurnIndex = ++teamTurnIndex % (numberOfTeams + 1); //there is no 0'th team.
         if (teamTurnIndex == 0) teamTurnIndex = 1; //there is no 0'th team.
         if (teamTurnIndex == startingTeamsNumber)
@@ -537,13 +536,13 @@ public class Game implements Runnable {
         //setup each team's players
         for (int j = 0; j < noOfPlayers; j++) {
             if (teams[j] == 1) {
-                teamOne.add(new Player(users[j], 1, 0));
+                teamOne.add(new Player(users[j], 1, 0, 0));
             }
             if (teams[j] == 2) {
-                teamTwo.add(new Player(users[j], 2, 0));
+                teamTwo.add(new Player(users[j], 2, 0, 0));
             }
             if (teams[j] == 3) {
-                teamThree.add(new Player(users[j], 3, 0));
+                teamThree.add(new Player(users[j], 3, 0, 0));
             }
         }
         int count = 0;
@@ -579,15 +578,17 @@ public class Game implements Runnable {
             setProtectedFields(i); //i.e. end circle, start circle and home field.
             String username = board[i * 15].getHomeField();
             board[noOfPlayers * 15 + noOfPlayers * 4 + i].setPieces(new String[]{username, username, username, username}); //Place alle pieces in their home circles.
-            positions[4*i]= noOfPlayers * 15 + noOfPlayers * 4 + i;
-            positions[4*i+1] = noOfPlayers * 15 + noOfPlayers * 4 + i;
-            positions[4*i+2] = noOfPlayers * 15 + noOfPlayers * 4 + i;
-            positions[4*i+3] = noOfPlayers * 15 + noOfPlayers * 4 + i;
+            getPlayerByUsername(username).setHomeCirclePos(noOfPlayers * 15 + noOfPlayers * 4 + i);
+            positions[4 * i] = noOfPlayers * 15 + noOfPlayers * 4 + i;
+            positions[4 * i + 1] = noOfPlayers * 15 + noOfPlayers * 4 + i;
+            positions[4 * i + 2] = noOfPlayers * 15 + noOfPlayers * 4 + i;
+            positions[4 * i + 3] = noOfPlayers * 15 + noOfPlayers * 4 + i;
         }
     }
 
     private void setStartAndEndFields(int pos, Player user) { //Sets each players goalcircles/end fields and homefields.
         user.setHomePos(pos * 15);
+        players.add(user);
         board[pos * 15].setHomeField(user.getUsername());
         board[noOfPlayers * 15 + pos * 4].setEndField(user.getUsername());
         board[noOfPlayers * 15 + pos * 4 + 1].setEndField(user.getUsername());
@@ -595,9 +596,9 @@ public class Game implements Runnable {
         board[noOfPlayers * 15 + pos * 4 + 3].setEndField(user.getUsername());
     }
 
-    private void setAllFields(){
-        for(int i=0; i<board.length; i++){
-            board[i]=new BoardField(new String[4], "", "");
+    private void setAllFields() {
+        for (int i = 0; i < board.length; i++) {
+            board[i] = new BoardField(new String[4], "", "");
         }
     }
 
@@ -648,30 +649,46 @@ public class Game implements Runnable {
         if (version == 1) return 90 + homePos / 15 * 4;
         return -1;
     }
-    private int getPlayerIndexToTheLeftOfUsername(String username){
-        int index=-1;
+
+    private int getPlayerIndexToTheLeftOfUsername(String username) {
+        int index = -1;
         ArrayList<Player> teamtmp = getTeamByUsername(username);
-        for(int i=0; i<teamtmp.size();i++){
-            if(teamtmp.get(i).getUsername().matches(username)) index=i;
+        for (int i = 0; i < teamtmp.size(); i++) {
+            if (teamtmp.get(i).getUsername().matches(username)) index = i;
         }
-        int targetIndex = (index+1) % teamtmp.size();
+        int targetIndex = (index + 1) % teamtmp.size();
         String usernameToTheLeft = teamtmp.get(targetIndex).getUsername();
         return getIndexByUsername(usernameToTheLeft);
     }
-    private int getIndexByUsername(String username){
-        int index=-1;
-        for(int i=0; i<noOfPlayers; i++){
-            if(users[i].matches(username)) index=i;
+
+    private int getIndexByUsername(String username) {
+        int index = -1;
+        for (int i = 0; i < noOfPlayers; i++) {
+            if (users[i].matches(username)) index = i;
         }
         return index;
     }
 
-    private void movePiece(int position, int endPosition){ //This updates the positions and pieceindexes array which is used for gameupdates
-        int index=-1;
-        for(int i=0; i<positions.length; i++){
-            if(positions[i]==position) index=i;
+    private void movePiece(int position, int endPosition) { //This updates the positions and pieceindexes array which is used for gameupdates
+        int index = -1;
+        for (int i = 0; i < positions.length; i++) {
+            if (positions[i] == position) index = i;
         }
-        positions[index]=endPosition;
-        pieceIndexes[index]=endPosition-position;
+        positions[index] = endPosition;
+        pieceIndexes[index] = endPosition - position;
+    }
+
+    private int getHomeFieldByUsername(String username){
+        for (Player x : players) {
+            if(x.getUsername().matches(username)) return x.getHomePos();
+        }
+        return -1;
+    }
+
+    private Player getPlayerByUsername(String username){
+        for(Player x : players){
+            if(x.getUsername().matches(username)) return x;
+        }
+        return null;
     }
 }
