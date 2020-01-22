@@ -38,7 +38,7 @@ public class GameView{
 
     private static int version;
     private static int numberOfFields;
-    private static final int startFieldOffset = 7;
+    private static final int startFieldOffset = -7;
 
     private static final int pieceRadius = 25;
     private static final int startFieldRadius = 4*pieceRadius;
@@ -151,8 +151,8 @@ public class GameView{
 
     public void setup(){
         if(version == 0){
-            colorNames = new String[]{"blue", "red", "yellow", "green"};
-            colors = new Color[]{blue, red, yellow, green};
+            colorNames = new String[]{"green", "blue", "red", "yellow"};
+            colors = new Color[]{green, blue, red, yellow};
         } else {
             colorNames = new String[]{"purple", "red", "orange", "yellow", "green", "blue"};
             colors = new Color[]{purple, red, orange, yellow, green, blue};
@@ -587,7 +587,6 @@ class GameUpdater implements Runnable{
         Gson gson = new Gson();
 
         try {
-
             while (true) {
 
                 Object[] gameUpdate = game.get(new ActualField("gameUpdate"), new FormalField(String.class), new FormalField(String.class),
@@ -767,13 +766,13 @@ class Field{
 
         if(version == 0) {
             if (index % 4 == 0) {
-                color = GameView.blue;
-            } else if (index % 4 == 1) {
                 color = GameView.green;
-            } else if (index % 4 == 2) {
+            } else if (index % 4 == 1) {
                 color = GameView.yellow;
-            } else if (index % 4 == 3) {
+            } else if (index % 4 == 2) {
                 color = GameView.red;
+            } else if (index % 4 == 3) {
+                color = GameView.blue;
             }
         } else {
             if (index <= 7 || index >=83) {
