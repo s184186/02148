@@ -15,7 +15,7 @@ public enum Cards {
     TWELVE("Twelve", 12, "fw"),
     THIRT("Thirteen", 13, "fw"),
     FOURT("Fourteen", 14, "fw"),
-    HEART("Heart", 0, "unl"),
+    HEART("Heart", 1, "unl"),
     SWITCH("Switch", 0, "sw"),
     EIGHT_H("EightH", 0, "ch"),
     THIRT_H("ThirteenH", 0, "ch"),

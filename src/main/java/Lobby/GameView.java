@@ -162,8 +162,8 @@ public class GameView{
 
         usernameLabels = new Label[numberOfFields/15];
 
-        fields = new Field[numberOfFields];
-        for(int i = 0; i < numberOfFields; i++){
+        fields = new Field[numberOfFields + 20];
+        for(int i = 0; i < numberOfFields + 20; i++){
             fields[i] = new Field(pane);
         }
 
@@ -217,8 +217,8 @@ public class GameView{
                 usernameLabels[n].setLayoutY(yUsernameLabels-usernameLabels[n].getPrefHeight()/2);
                 usernameLabels[n].setAlignment(Pos.CENTER);
                 pane.getChildren().add(usernameLabels[n]);
-                drawEndFields(xEndFields, yEndFields, endFieldRadius, colors[n], endFieldSizeDec, endFieldDistance*v, endFieldDistance*w);
-                drawStartPieces(xStartFields, yStartFields, colors[n],colorNames[n]);
+                drawEndFields(xEndFields, yEndFields, endFieldRadius, n, endFieldSizeDec, endFieldDistance*v, endFieldDistance*w);
+                drawStartPieces(xStartFields, yStartFields, n,colorNames[n]);
             }
         }
         GameUpdater gameUpdater = new GameUpdater(gameSpace, userSpace, username, this);
@@ -237,21 +237,23 @@ public class GameView{
 
     public void moveTo(Piece piece, Field field) {
         double x, y;
-        if(field.isEndField()){
+        if (field.isEndField()) {
             x = field.getCircle().getCenterX();
             y = field.getCircle().getCenterY();
-        } else {
-            Point p = field.getNextSpot(piece);
-            if(p == null){
-                return;
+        } else if (field.isStartField()){
+            x = piece.getCircle().getCenterX();
+            y = piece.getCircle().getCenterY();
+        }else {
+                Point p = field.getNextSpot(piece);
+                if(p == null){
+                    return;
+                }
+                x = p.x;
+                y = p.y;
             }
-            x = p.x;
-            y = p.y;
-        }
 
         if(piece.getCurrentField() != null){
             piece.getCurrentField().removeFromSpot(piece);
-            piece.setCurrentField(null);
         }
 
         piece.setCurrentField(field);
@@ -330,16 +332,18 @@ public class GameView{
         makeDarker(endField1);
         endField1.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> selectField(index));
         endField1.toBack();
+        fields[index] = field1;
+        fields[index].setIndex(index);
         pane.getChildren().add(endField1);
         return field1;
     }
 
-    private Field[] drawEndFields(double xI, double yI, int width1, Color color, int sizeDec, double endFieldDistance1, double endFieldDistance2) {
+    private Field[] drawEndFields(double xI, double yI, int width1, int n, int sizeDec, double endFieldDistance1, double endFieldDistance2) {
 
-        Field endField1 = drawEndField(xI, yI, width1/2, color, 0);
-        Field endField2 = drawEndField(xI - endFieldDistance1, yI - endFieldDistance2, (width1-sizeDec)/2, color, 1);
-        Field endField3 = drawEndField(xI - endFieldDistance1*2, yI - endFieldDistance2*2, (width1-sizeDec*2)/2, color, 2);
-        Field endField4 = drawEndField(xI - endFieldDistance1*3, yI - endFieldDistance2*3, (width1-sizeDec*3)/2, color, 3);
+        Field endField1 = drawEndField(xI, yI, width1/2, colors[n], numberOfFields + n * 4);
+        Field endField2 = drawEndField(xI - endFieldDistance1, yI - endFieldDistance2, (width1-sizeDec)/2, colors[n], numberOfFields + n * 4 + 1);
+        Field endField3 = drawEndField(xI - endFieldDistance1*2, yI - endFieldDistance2*2, (width1-sizeDec*2)/2, colors[n], numberOfFields + n * 4 + 2);
+        Field endField4 = drawEndField(xI - endFieldDistance1*3, yI - endFieldDistance2*3, (width1-sizeDec*3)/2, colors[n], numberOfFields + n * 4 + 3);
 
         return new Field[]{endField1, endField2, endField3, endField4};
     }
@@ -386,7 +390,7 @@ public class GameView{
         shape.setOnMouseExited(mouseEventEventHandler1);
     }
 
-    private void drawPiece(double x, double y, Color color, String colorName){
+    private Piece drawPiece(double x, double y, Color color, String colorName){
         Piece piece = new Piece(pieceIndex);
         Circle pieceC = new Circle(x, y, pieceRadius/2);
         Text text = new Text(String.valueOf(pieceIndex));
@@ -408,6 +412,7 @@ public class GameView{
         pane.getChildren().add(stack);
         pieces[pieceIndex] = piece;
         pieceIndex++;
+        return piece;
     }
 
     private void selectPiece(int index) {
@@ -420,16 +425,21 @@ public class GameView{
         }
     }
 
-    private void drawStartPieces(double x, double y, Color color, String colorName) {
-        Circle startField = new Circle(x, y, startFieldRadius/2);
-        startField.setFill(color);
-        startField.setStroke(Color.BLACK);
-        pane.getChildren().add(startField);
+    private void drawStartPieces(double x, double y, int n, String colorName) {
+        Field startField = new Field(pane);
+        Circle startFieldC = new Circle(x, y, startFieldRadius/2);
+        startField.setCircle(startFieldC);
+        startField.setIndex(76 + n);
+        startField.setIsStartField(true);
+        startFieldC.setFill(colors[n]);
+        startFieldC.setStroke(Color.BLACK);
+        fields[76 + n] = startField;
+        pane.getChildren().add(startFieldC);
 
-        drawPiece(x-pieceRadius, y, color, colorName);
-        drawPiece(x, y-pieceRadius,color, colorName);
-        drawPiece(x+pieceRadius, y,color, colorName);
-        drawPiece(x, y+pieceRadius,color, colorName);
+        drawPiece(x-pieceRadius, y, colors[n], colorName).setCurrentField(startField);
+        drawPiece(x, y-pieceRadius,colors[n], colorName).setCurrentField(startField);
+        drawPiece(x+pieceRadius, y,colors[n], colorName).setCurrentField(startField);
+        drawPiece(x, y+pieceRadius,colors[n], colorName).setCurrentField(startField);
     }
 
     public void setGameSpace(Space gameSpace) {
@@ -506,7 +516,7 @@ public class GameView{
         int[] selectedPieceIndexes = new int[4];
         for(int i = 0; i < 4; i++){
             if(selectedPiece[i] != null) {
-                selectedPieceIndexes[i] = selectedPiece[i].getIndex();
+                selectedPieceIndexes[i] = selectedPiece[i].getCurrentField().getIndex();
             }
         }
         return selectedPieceIndexes;
@@ -632,10 +642,9 @@ class GameUpdater implements Runnable{
                             cardJson = gson.toJson(gameView.getSelectedCard());
                             int selectedCardOption = gameView.getSelectedCardOption() - 1;
                             String piecesJson = gson.toJson(gameView.getSelectedPieces());
+
                             String fieldsJson = gson.toJson(gameView.getSelectedFields());
-
                             game.put("gameRequest", "turnRequest", username, cardJson, piecesJson, fieldsJson, selectedCardOption);
-
                             Object[] resp = game.get(new ActualField("gameUpdate"), new ActualField("turnRequestAck"), new FormalField(String.class), new ActualField(username),
                                     new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
 
@@ -709,7 +718,7 @@ class Field{
     private Path path;
     private Circle circle;
 
-    private boolean isEndField;
+    private boolean isEndField, isStartField;
 
     private int index;
     private int version;
@@ -830,6 +839,10 @@ class Field{
         return path;
     }
 
+    public void setIndex(int i){
+        index = i;
+    }
+
     public void setCircle(Circle circle) {
         this.circle = circle;
     }
@@ -844,5 +857,13 @@ class Field{
 
     public void setEndField(boolean endField) {
         isEndField = endField;
+    }
+
+    public boolean isStartField() {
+        return isStartField;
+    }
+
+    public void setIsStartField(boolean b) {
+        isStartField = b;
     }
 }
