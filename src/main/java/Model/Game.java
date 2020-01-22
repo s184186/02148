@@ -162,6 +162,7 @@ public class Game implements Runnable {
         ArrayList<Cards> hand = new ArrayList<>();
         Random random = new Random();
         for (int i = 0; i < noOfPlayers; i++) {
+            for(int j=0; j<4;j++){
                 int index = random.nextInt(decksize);
                 int amount = deck.get(index).getAmount();
                 deck.get(index).setAmount(amount - 1);
@@ -170,6 +171,7 @@ public class Game implements Runnable {
                     deck.remove(index);
                     decksize--;
                 }
+            }
             playerHands[i]=hand;
             String handJson = gson.toJson(hand);
             game.put("gameUpdate", "hand", "", users[i], handJson, "", ""); //Each user's hand is put in the tuple space. The users name is the id factor.
