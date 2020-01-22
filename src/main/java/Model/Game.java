@@ -159,9 +159,10 @@ public class Game implements Runnable {
         if (deck == null || getCardsLeftInDeck() < noOfPlayers * 4) { //If there aren't enough cards left to hand out make a deck consisting of all the used cards and all the unused ones
             setupDeck();
         }
-        ArrayList<Cards> hand = new ArrayList<>();
+
         Random random = new Random();
         for (int i = 0; i < noOfPlayers; i++) {
+            ArrayList<Cards> hand = new ArrayList<>();
             for(int j=0; j<4;j++){
                 int index = random.nextInt(decksize);
                 int amount = deck.get(index).getAmount();

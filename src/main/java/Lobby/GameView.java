@@ -455,6 +455,7 @@ public class GameView{
         for(int i = 0; i < 4; i++) {
             if(hand.get(i).equals(getSelectedCard())){
                 hand.remove(i);
+                break;
             }
         }
     }
