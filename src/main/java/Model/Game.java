@@ -29,8 +29,6 @@ public class Game implements Runnable {
     private int teamTurnIndex;
     private int decksize = 13;
     private int[] startPos = new int[4];
-    private int[] pieces;
-    private int[] pieceMoves;
     private int[] teams;
     private int[] positions;
     private int winningTeam = -1;
@@ -94,6 +92,8 @@ public class Game implements Runnable {
                 game.put("gameUpdate", "yourTurn", "", playerTurn, "", "", "");
                 result = "";
                 cardType="";
+                int[] pieces = null;
+                int[] pieceMovesToField = null;
                 while (!result.matches("ok")) {
                     System.out.println("here1");
                     Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
@@ -102,8 +102,8 @@ public class Game implements Runnable {
 
                     String username = (String) potentialMove[2];
                     Cards card = gson.fromJson((String) potentialMove[3], Cards.class);
-                    int[] pieces = gson.fromJson((String) potentialMove[4], int[].class); // de brikker der bliver flyttet på (deres indekser
-                    int[] pieceMovesToField = gson.fromJson((String) potentialMove[5], int[].class); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
+                 pieces = gson.fromJson((String) potentialMove[4], int[].class); // de brikker der bliver flyttet på (deres indekser
+                 pieceMovesToField = gson.fromJson((String) potentialMove[5], int[].class); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
                     int chosenCard = (int) potentialMove[6];
 
                      position = pieces[0];
@@ -114,7 +114,7 @@ public class Game implements Runnable {
                             "", "", "");
 
                 }
-                movePiece();
+                movePiece(pieces, pieceMovesToField);
                 update(playerTurn);
                 nextTurn();
 
@@ -676,8 +676,8 @@ public class Game implements Runnable {
         return index;
     }
 
-    private void movePiece() { //This updates the positions and pieceindexes array which is used for gameupdates
-       if(pieces.length==2 && pieceMoves.length==0){ //in case of switch cards
+    private void movePiece(int[] pieces, int[] pieceMovesToField) { //This updates the positions and pieceindexes array which is used for gameupdates
+       if(pieces.length==2 && pieceMovesToField.length==0){ //in case of switch cards
         for(int i=0; i<positions.length; i++){
             if(startPos[0] == positions[i]) {
                 positions[i] = startPos[1];
@@ -689,10 +689,10 @@ public class Game implements Runnable {
             }
         }
        }
-      else if(pieceMoves.length>0) { //in case of a seven.
-           for (int j = 0; j < pieceMoves.length; j++) {
-               if (pieceMoves[j] > 0) {
-                   positions[pieces[j]] = pieceMoves[j];
+      else if(pieceMovesToField.length>0) { //in case of a seven.
+           for (int j = 0; j < pieceMovesToField.length; j++) {
+               if (pieceMovesToField[j] > 0) {
+                   positions[pieces[j]] = pieceMovesToField[j];
                    pieceIndexes[j] = pieces[j];
                }
            }
