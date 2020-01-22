@@ -12,6 +12,7 @@ import java.util.*;
 import static Model.Cards.*;
 
 public class Game implements Runnable {
+    private boolean readOnly;
     private int noOfPlayers;
     private int lower = -1;
     private int upper = -2;
@@ -87,6 +88,7 @@ public class Game implements Runnable {
         }
         while (winningTeam == -1) {
             try {
+                if(!canUserMakeMove(playerTurn)) nextTurn();
                 if (game.getp(new ActualField("need cards")) != null)
                     needCardsCounter++; //counter that increments when a user needs cards.
                 if (needCardsCounter == noOfPlayers)
@@ -102,7 +104,8 @@ public class Game implements Runnable {
                             new ActualField(playerTurn), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class)
                             , new FormalField(Integer.class)); // A basic move will b e represented by position, the card used and username and extra field.
 
-                    Type listType = new TypeToken<ArrayList<Integer>>() {}.getType();
+                    Type listType = new TypeToken<ArrayList<Integer>>() {
+                    }.getType();
 
                     String username = (String) potentialMove[2];
                     Cards card = gson.fromJson((String) potentialMove[3], Cards.class);
@@ -110,7 +113,7 @@ public class Game implements Runnable {
                     pieceMovesToField = gson.fromJson((String) potentialMove[5], listType); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
                     int chosenCard = (int) potentialMove[6];
 
-                    position = pieces.get(0);
+                    position = positions[pieces.get(0)];
                     endPosition = position + card.getMoves();
 
                     result = calculateMove(username, card, pieces, pieceMovesToField, chosenCard);
@@ -219,7 +222,7 @@ public class Game implements Runnable {
                 if (position % 15 < endPosition % 15) { //if this is the case, you've crossed a homefield
                     homefieldPos = 15 * (endPosition / 15); //figure out the position of homefield crossed
                     if (homefieldPos == noOfPlayers * 15) homefieldPos = 0;
-                    if (!board[homefieldPos].getHomeField().matches(username) && board[homefieldPos].getPieces()[0]!=null) { // if it's not your homefield and someone is on that homefield, you can't play -4.
+                    if (!board[homefieldPos].getHomeField().matches(username) && board[homefieldPos].getPieces()[0] != null) { // if it's not your homefield and someone is on that homefield, you can't play -4.
                         return "illegal move!";
                     } else {
                         endPosition--; //otherwise decrement by 1 since you're jumping over homefield.
@@ -231,14 +234,16 @@ public class Game implements Runnable {
                 for (int i = 0; i < 4; i++) {
                     if (board[endPosition].getPieces()[i].equals(username))
                         continue; //If you are already on that field, find an available place for your piece on that field.
-                    if (board[endPosition].getPieces()[i]==null) { //if there is room, insert piece there
+                    if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
+                       if(readOnly) return "ok";
                         board[endPosition].getPieces()[i] = username; //update board
                         return "ok";
                     } else {
                         for (int j = 0; j < noOfPlayers; j++) {
                             if (board[15 * (j)].getHomeField().matches(username)) {
                                 for (int k = 0; k < noOfPlayers; k++) {
-                                    if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k]==null) {
+                                    if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] == null) {
+                                        if(readOnly) return "ok";
                                         board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
                                         return "ok";
                                     }
@@ -289,11 +294,12 @@ public class Game implements Runnable {
                 }
                 homefieldPos = getHomeFieldByUsername(username);
                 //check if you have pieces in homecircle
-                liftPiece(getPlayerByUsername(username).getHomeCirclePos());
+                if(!readOnly) liftPiece(getPlayerByUsername(username).getHomeCirclePos());
                 for (int j = 0; j < 4; j++) {
-                    if (board[homefieldPos].getPieces()[j]!=null)
+                    if (board[homefieldPos].getPieces()[j] != null)
                         continue; //If you are already on that field, find an available place for your piece on that field.
-                    if (board[homefieldPos].getPieces()[j]==null) { //if there is room, insert piece there
+                    if (board[homefieldPos].getPieces()[j] == null) { //if there is room, insert piece there
+                        if(readOnly) return "ok";
                         board[homefieldPos].getPieces()[j] = username; //update board
                         endPosition = homefieldPos;
                         return "ok";
@@ -302,9 +308,10 @@ public class Game implements Runnable {
                 break;
 
             case SWITCH: //switch pieces
-                if (board[positions[pieces.get(1)]].getPieces()[0]==null || board[positions[pieces.get(0)]].getPieces()[0]==null || board[positions[pieces.get(0)]].isLocked() || board[positions[pieces.get(1)]].isLocked() || board[pieces.get(1)].isProtect() || board[pieces.get(0)].isProtect()) {
+                if (board[positions[pieces.get(1)]].getPieces()[0] == null || board[positions[pieces.get(0)]].getPieces()[0] == null || board[positions[pieces.get(0)]].isLocked() || board[positions[pieces.get(1)]].isLocked() || board[pieces.get(1)].isProtect() || board[pieces.get(0)].isProtect()) {
                     return "illegal move!";
                 }
+                if(readOnly) return "ok";
                 String tmp1 = board[positions[pieces.get(0)]].getPieces()[0];
                 String tmp2 = board[positions[pieces.get(1)]].getPieces()[0];
                 board[positions[pieces.get(1)]].getPieces()[0] = tmp1;
@@ -352,19 +359,21 @@ public class Game implements Runnable {
                 }
                 if (position > 59 && position < (noOfPlayers * 15 + 4 * noOfPlayers) && isStuck(position, 15 * (position / 15))) { //if your piece is in it's goalcircles.
                     int felter = upper - lower;
-                    liftPiece(position);
+                    if(!readOnly) liftPiece(position);
                     endPosition = (endPosition % felter) + position + offset;
-                    tryLock(endPosition);
-                    board[endPosition].getPieces()[0] = username;
-                    finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username); //check if player is finished
-                    if (isTeamDone(username)) {
+                    if(!readOnly) tryLock(endPosition);
+                    if(!readOnly) board[endPosition].getPieces()[0] = username;
+                    if(!readOnly) finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username); //check if player is finished
+                    if (isTeamDone(username) && !readOnly) {
                         winningTeam = getTeamNumberByUsername(username);
                     }
+                    if(readOnly) return "ok";
                     return "ok";
                 } else if (position % 15 > endPosition % 15) { //if this is the case, you've crossed a homefield
                     homefieldPos = 15 * (endPosition / 15); //figure out the position of homefield crossed
                     if (homefieldPos == 15 * noOfPlayers) homefieldPos = 0;
                     if (board[homefieldPos].getHomeField().matches(username)) { // if it's your homefield.
+                        if(readOnly) return "ok";
                         goalSquaresUpper(homefieldPos, position, endPosition, username);
                         finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username);
                         if (isTeamDone(username)) {
@@ -373,14 +382,14 @@ public class Game implements Runnable {
                         return "ok"; //remove card from space/card was valid and has been used
                     }
                     //if it's not your homefield
-                    else if (board[homefieldPos].getPieces()[0]!=null) {
+                    else if (board[homefieldPos].getPieces()[0] != null) {
                         return "illegal move!"; //You can't play that card because something is blocking you.
                     } else {
                         endPosition++; //Nothing is blocking you, so you can cross this homefield.
                     }
                 }
                 //The move is legal, first we remove your piece from it's current position
-                liftPiece(position);
+                if(!readOnly) liftPiece(position);
                 if (endPosition > noOfPlayers * 15 - 1) { //If this wasn't your homefield, we'll wrap around and begin at 0.
                     endPosition = endPosition % (noOfPlayers * 15);
                 }
@@ -389,7 +398,8 @@ public class Game implements Runnable {
                     for (int i = 0; i < 4; i++) {
                         if (board[endPosition].getPieces()[i].equals(username))
                             continue; //If you are already on that field, find an available place for your piece on that field.
-                        if (board[endPosition].getPieces()[i]==null) { //if there is room, insert piece there
+                        if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
+                            if(readOnly) return "ok";
                             board[endPosition].getPieces()[i] = username; //update board
                             return "ok";
                         }
@@ -400,7 +410,8 @@ public class Game implements Runnable {
                         if (board[15 * (j)].getHomeField().matches(username)) {
                             endPosition = 15 * j;
                             for (int k = 0; k < 4; k++) {
-                                if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k]!=null) {
+                                if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
+                                    if(readOnly) return "ok";
                                     board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
                                     return "ok";
                                 }
@@ -410,8 +421,79 @@ public class Game implements Runnable {
 
                 }
         }
-        return "ok";
+        return "illegal move!";
     }
+
+    private boolean canUserMakeMove(String username) throws InterruptedException {
+        readOnly=true;
+        Cards[] hand = playerHands[getPlayerIndex(username)];
+        int[] piecesPositions = new int[4];
+        int[] pieces = new int[4];
+        int switchIndex = -1;
+        int splitIndex = -1;
+        int counter = 0;
+        int maxMoves;
+        int[] maxMovesArr = new int[4];
+        for (int k = 0; k < noOfPlayers * 4; k++) {
+            if (board[positions[k]].getPieces()[0].matches(username)) {
+                piecesPositions[counter] = positions[k];
+                pieces[counter] = k;
+                counter++;
+            }
+        }
+        for (int i = 0; i < 4; i++) {
+            if (hand[i].getName().matches("Switch")) switchIndex = i;
+            if (hand[i].getName().matches("Seven")) splitIndex = i;
+        }
+
+        for (int i = 0; i < 4; i++) { // go through each card
+            for (int j = 0; j < 4; j++) { // through each piece
+                ArrayList<Integer> test = new ArrayList<Integer>();
+                test.add(pieces[j]);
+                if (calculateMove(username, hand[i], test, null, 1).matches("ok")) {
+                    readOnly=false;
+                    return true;
+                }
+            }
+        }
+        if (switchIndex != -1) {
+            for (int i = 0; i < noOfPlayers * 4; i++) {
+                for (int j = 0; j < noOfPlayers * 4; j++) {
+                    ArrayList<Integer> test = new ArrayList<Integer>();
+                    test.add(j);
+                    test.add(i);
+                    if (calculateMove(username, hand[switchIndex], test, null, 0).matches("ok")) {
+                        readOnly=false;
+                        return true;
+                    }
+                }
+            }
+            //try to switch with everyone and everything.
+        }
+        if (splitIndex != -1) {
+            for (int i = 0; i < 4; i++) { //each piece
+                for (int j = 1; j < 8; j++) { //each card under 8
+                    ArrayList<Integer> test = new ArrayList<Integer>();
+                    test.add(pieces[i]);
+                    if (calculateMove(username, Cards.getEnumByNoOfMoves(j), test, null, 0).matches("ok")) {
+                        maxMovesArr[i] = j;
+                    }
+                }
+
+            }
+            int sum = 0;
+            for (int l = 0; l < 4; l++) {
+                sum += maxMovesArr[0];
+            }
+            if (sum > 6){
+                readOnly=false;
+                return true;
+            }
+        }
+        readOnly=false;
+        return false;
+    }
+
 
     private void update(String username) throws InterruptedException {
         String pieceindex = gson.toJson(pieceIndexes);
@@ -487,7 +569,7 @@ public class Game implements Runnable {
 
     private void liftPiece(int position) {
         for (int j = 3; j > -1; j--) {
-            if (board[position].getPieces()[j]!=null) {
+            if (board[position].getPieces()[j] != null) {
                 board[position].getPieces()[j] = "";
                 break;
             }
@@ -511,7 +593,7 @@ public class Game implements Runnable {
         int homepos = team.get(index).getHomePos();
         int goalPos = getGoalPosByHomefield(homepos);
         for (int i = 0; i < 4; i++) {
-            if (board[goalPos + i].getPieces()[0]!=null) pieces++;
+            if (board[goalPos + i].getPieces()[0] != null) pieces++;
         }
         return pieces == 4;
     }
