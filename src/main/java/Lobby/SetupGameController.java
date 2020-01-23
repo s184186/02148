@@ -82,6 +82,8 @@ public class SetupGameController {
         lobbyController.setSetupGameController(this);
         lobbyController.setLobbyModel(lobbyModel);
         lobbyController.setHost(true);
+        lobbyController.setServer(server);
+        lobbyController.setServerThread(serverThread);
         lobbyController.setup();
 
         Scene lobbyScene = new Scene(root);

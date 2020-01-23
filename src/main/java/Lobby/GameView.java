@@ -16,8 +16,10 @@ import javafx.scene.shape.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.awt.*;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +29,7 @@ import static java.lang.Math.round;
 import javafx.geometry.Insets;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
+import org.jspace.RemoteSpace;
 import org.jspace.Space;
 
 public class GameView{
@@ -75,7 +78,7 @@ public class GameView{
     String currentMove = "";
     private String[] colorNames;
     private Color[] colors;
-    private Space gameSpace;
+    private RemoteSpace gameSpace;
     private String username;
     private Space userSpace;
     private ArrayList<Cards> hand = new ArrayList<>();
@@ -83,6 +86,10 @@ public class GameView{
     private String[] users;
     private int[] teams;
     private int numberOfTeams;
+    private Stage stage;
+    private Thread gameThread;
+    private Server server;
+    private Thread serverThread;
 
     public void initialize(){
 
@@ -143,6 +150,32 @@ public class GameView{
         }
     }
 
+    public void shutDown(){
+        if(username.matches(host)){
+            try {
+                gameSpace.put("gameEnd", username);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    public void closeGame() {
+        if(!username.matches(host)){
+            stage.close();
+        } else {
+            server.exit();
+            serverThread.interrupt();
+        }
+        gameThread.interrupt();
+        try {
+            gameSpace.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setup(){
         if(version == 0){
             colorNames = new String[]{"green", "blue", "red", "yellow"};
@@ -151,6 +184,8 @@ public class GameView{
             colorNames = new String[]{"purple", "red", "orange", "yellow", "green", "blue"};
             colors = new Color[]{purple, red, orange, yellow, green, blue};
         }
+
+        stage.setOnHiding(event -> shutDown());
 
         numberOfFields = 60 + version * 30;
 
@@ -219,7 +254,12 @@ public class GameView{
             }
         }
         GameUpdater gameUpdater = new GameUpdater(gameSpace, userSpace, username, this);
-        new Thread(gameUpdater).start();
+        gameThread = new Thread(gameUpdater);
+        gameThread.setDaemon(true);
+        gameThread.start();
+        Thread thread2 = new Thread(new HasGameEndedUpdater(gameSpace, username, this));
+        thread2.setDaemon(true);
+        thread2.start();
     }
 
     private void selectField(int selectField) {
@@ -501,7 +541,7 @@ public class GameView{
         return selectedPieceIndexes;
     }
 
-    public void setGameSpace(Space gameSpace) {
+    public void setGameSpace(RemoteSpace gameSpace) {
         this.gameSpace = gameSpace;
     }
 
@@ -568,6 +608,18 @@ public class GameView{
 
     public void setNumberOfTeams(int numberOfTeams) {
         this.numberOfTeams = numberOfTeams;
+    }
+
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    public void setServerThread(Thread serverThread) {
+        this.serverThread = serverThread;
+    }
+
+    public void setServer(Server server) {
+        this.server = server;
     }
 }
 
@@ -664,14 +716,34 @@ class GameUpdater implements Runnable{
                             System.out.println("Move illegal");
                         }
                         break;
-
-                    case "gameEnd":
-                        break;
                 }
             }
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+}
+
+class HasGameEndedUpdater implements Runnable{
+
+    private Space gameSpace;
+    private String username;
+    private GameView gameView;
+
+    public HasGameEndedUpdater(Space gameSpace, String username, GameView gameView){
+        this.gameSpace = gameSpace;
+        this.username = username;
+        this.gameView = gameView;
+    }
+
+    @Override
+    public void run() {
+        try {
+            gameSpace.get(new ActualField("gameHasEnded"), new ActualField(username));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Platform.runLater(()->gameView.closeGame());
     }
 }
 

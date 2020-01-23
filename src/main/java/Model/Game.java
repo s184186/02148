@@ -23,6 +23,7 @@ public class Game implements Runnable {
     private Integer endPosition;
     private String[] users;
     private boolean[] finished;
+    private String host;
     private Space game;
     private BoardField[] board;
     private int playerTurnIndex;
@@ -43,9 +44,11 @@ public class Game implements Runnable {
     private ArrayList<Player> teamTwo = new ArrayList<>();
     private ArrayList<Player> teamThree = new ArrayList<>();
     private ArrayList<CardObj> deck;
+    private volatile boolean exit;
 
 
     public Game(String host, String[] players, int[] teams, int version, Space game, int numberOfTeams) {
+        this.host = host;
         this.game = game;
         this.users = players;
         this.numberOfTeams = numberOfTeams;
@@ -85,7 +88,10 @@ public class Game implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        while (winningTeam == -1) {
+        Thread thread = new Thread(new GameEndedUpdater(game, host, users));
+        thread.setDaemon(true);
+        thread.start();
+        while (winningTeam == -1 && !exit) {
             try {
                 if(!canUserMakeMove(users[playerTurnIndex])) {
                     playerTurnIndex = (playerTurnIndex + 1) % users.length;
@@ -133,6 +139,10 @@ public class Game implements Runnable {
             }
         }
         System.out.println("Team " + winningTeam + " won");
+    }
+
+    public void exit(){
+        exit = true;
     }
 
     private void setupDeck() {
@@ -809,5 +819,31 @@ public class Game implements Runnable {
             if (x.getUsername().matches(username)) return x;
         }
         return null;
+    }
+}
+
+
+class GameEndedUpdater implements Runnable{
+
+    private Space gameSpace;
+    private String hostName;
+    private String[] users;
+
+    public GameEndedUpdater(Space gameSpace, String hostName, String[] users){
+        this.gameSpace = gameSpace;
+        this.hostName = hostName;
+        this.users = users;
+    }
+
+    @Override
+    public void run() {
+        try {
+            gameSpace.get(new ActualField("gameEnd"), new ActualField(hostName));
+            for(String user: users){
+                gameSpace.put("gameHasEnded", user);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

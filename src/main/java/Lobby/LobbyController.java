@@ -47,6 +47,8 @@ public class LobbyController {
 
     private boolean isHost;
     private int numberOfTeams;
+    private Thread serverThread;
+    private Server server;
 
     public void initialize() {
         sp.setContent(chatBox);
@@ -184,6 +186,11 @@ public class LobbyController {
         gameView.setNumberOfTeams(numberOfTeams);
         gameView.setGameSpace(game);
         gameView.setUsername(username);
+        gameView.setStage(stage);
+        if(isHost){
+            gameView.setServer(server);
+            gameView.setServerThread(serverThread);
+        }
         gameView.setup();
 
         Scene scene = new Scene(root);
@@ -345,6 +352,14 @@ public class LobbyController {
 
     public Label[] getPlayerFields() {
         return playerLabels;
+    }
+
+    public void setServerThread(Thread serverThread) {
+        this.serverThread = serverThread;
+    }
+
+    public void setServer(Server server) {
+        this.server = server;
     }
 }
 

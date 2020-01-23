@@ -17,6 +17,10 @@ public class Server implements Runnable {
     private int numberOfTeams, version, maxNumberOfPlayers = 4;
     private String host;
     private Gson gson = new Gson();
+    private Thread threadMainGame;
+    private Game mainGame;
+    private SpaceRepository gameRepository;
+    private String gate;
 
     Server(int numberOfTeams, int version, String host, Space gameSpace) {
         this.numberOfTeams = numberOfTeams;
@@ -28,7 +32,7 @@ public class Server implements Runnable {
     public void run() {
         try {
             //Create game serverSpace
-            SpaceRepository gameRepository = new SpaceRepository();
+            gameRepository = new SpaceRepository();
 
             //Space where serverSpace threads communicate
             SequentialSpace serverSpace = new SequentialSpace();
@@ -47,7 +51,7 @@ public class Server implements Runnable {
             InetAddress inetAddress = InetAddress.getLocalHost();
             String ip = inetAddress.getHostAddress();
             int port = 11345;
-            String gate = "tcp://" + ip + ":" + port + "?keep";
+            gate = "tcp://" + ip + ":" + port + "?keep";
             gameSpace.put("IPPort", ip + ":" + port);
             System.out.println("A game is hosted on IP: " + ip + ":" + port);
 
@@ -129,8 +133,10 @@ public class Server implements Runnable {
         System.out.println(Arrays.toString(usersSorted));
         System.out.println(Arrays.toString(teamsSorted));
 
-        Game mainGame = new Game(host, usersSorted, teamsSorted, version, game, numberOfTeams);
-        new Thread(mainGame).start();
+        mainGame = new Game(host, usersSorted, teamsSorted, version, game, numberOfTeams);
+        threadMainGame = new Thread(mainGame);
+        threadMainGame.setDaemon(true);
+        threadMainGame.start();
     }
 
 
@@ -156,6 +162,13 @@ public class Server implements Runnable {
 
     public String getHost() {
         return this.host;
+    }
+
+    public void exit() {
+        gameRepository.closeGate(gate);
+        gameRepository.shutDown();
+        mainGame.exit();
+        threadMainGame.interrupt();
     }
 }
 
