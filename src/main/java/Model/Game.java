@@ -319,7 +319,7 @@ public class Game implements Runnable {
                 if (board[positions[pieces.get(1)]].getPieces()[0] == null || board[positions[pieces.get(0)]].getPieces()[0] == null) {
                     return "illegal move!";
                 }
-                if(board[positions[pieces.get(0)]].isLocked() || board[positions[pieces.get(1)]].isLocked() || board[pieces.get(1)].isProtect() || board[pieces.get(0)].isProtect()){
+                if(board[positions[pieces.get(0)]].isLocked() || board[positions[pieces.get(1)]].isLocked() || board[positions[pieces.get(1)]].isProtect() || board[positions[pieces.get(0)]].isProtect()){
                     return "illegal move!";
                 }
                 if(readOnly) return "ok";
@@ -474,7 +474,7 @@ public class Game implements Runnable {
                     ArrayList<Integer> test = new ArrayList<Integer>();
                     test.add(j);
                     test.add(i);
-                    if (calculateMove(username, hand.get(switchIndex), test, null, 0).matches("ok")) {
+                    if (calculateMove(username, hand.get(switchIndex), test, null, 1).matches("ok")) {
                         readOnly=false;
                         return true;
                     }
@@ -487,7 +487,7 @@ public class Game implements Runnable {
                 for (int j = 1; j < 8; j++) { //each card under 8
                     ArrayList<Integer> test = new ArrayList<Integer>();
                     test.add(pieces[i]);
-                    if (calculateMove(username, Cards.getEnumByNoOfMoves(j), test, null, 0).matches("ok")) {
+                    if (calculateMove(username, Cards.getEnumByNoOfMoves(j), test, null, 1).matches("ok")) {
                         maxMovesArr[i] = j;
                     }
                 }
@@ -600,7 +600,7 @@ public class Game implements Runnable {
 
     private boolean isPlayerDone(String username) {
         int pieces = 0;
-        int index = getPlayerIndex(username);
+        int index = getPlayerIndexOnTeam(username);
         ArrayList<Player> team = getTeamByUsername(username);
         int homepos = team.get(index).getHomePos();
         int goalPos = getGoalPosByHomefield(homepos);
@@ -744,12 +744,20 @@ public class Game implements Runnable {
     }
 
     private int getPlayerIndex(String username) {
+        for (int i = 0; i < noOfPlayers; i++) {
+            if (users[i].matches(username)) return i;
+        }
+        return -1;
+    }
+
+    private int getPlayerIndexOnTeam(String username) {
         ArrayList<Player> team = getTeamByUsername(username);
         for (int i = 0; i < team.size(); i++) {
             if (team.get(i).getUsername().matches(username)) return i;
         }
         return -1;
     }
+
 
     private int getGoalPosByHomefield(int homePos) {
         if (version == 0) return 60 + homePos / 15 * 4;
