@@ -363,18 +363,23 @@ public class Game implements Runnable {
 
             //switch case to default
             default: //Default corresponds to all enums with the function fw/forward
-                if (position > 75)
+                if (position > 75){
+                    System.out.println("print1");
                     return "illegal move!"; // you can't move something in the homecircles with a number card
+                    }
                 if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
+                    System.out.println("print2");
                     return "illegal move!"; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 }
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
+                    System.out.println("print3");
                     return "illegal move!"; //If you've finished and you're trying to move an opponents piece.
                 }
                 if (board[position].isLocked() || finished[playerTurnIndex]) {
+                    System.out.println("print4");
                     return "illegal move!"; //if piece is locked, or you've finished, you can't move this piece.
                 }
-                if (position > 59 && position < (noOfPlayers * 15 + 4 * noOfPlayers) && isStuck(position, 15 * (position / 15))) { //if your piece is in it's goalcircles.
+                if (position > 59 && position < (noOfPlayers * 15 + 4 * noOfPlayers) && isStuck(position, 15 * (position / 15))) { //if your piece is in its goalcircles.
                     int felter = upper - lower;
                     if (!readOnly) liftPiece(position);
                     endPosition = (endPosition % felter) + position + offset;
@@ -402,6 +407,7 @@ public class Game implements Runnable {
                     }
                     //if it's not your homefield
                     else if (board[homefieldPos].getPieces()[0] != null) {
+                        System.out.println("print5");
                         return "illegal move!"; //You can't play that card because something is blocking you.
                     } else {
                         endPosition++; //Nothing is blocking you, so you can cross this homefield.
@@ -540,23 +546,23 @@ public class Game implements Runnable {
                 break;
             case 15:
                 upperbound = 19;
-                offset = 78;
+                offset = 48;
                 break;
             case 30:
                 upperbound = 34;
-                offset = 67;
+                offset = 37;
                 break;
             case 45:
                 upperbound = 49;
-                offset = 56;
+                offset = 26;
                 break;
             case 60:
                 upperbound = 64;
-                offset = 45;
+                offset = 15;
                 break;
             case 75:
                 upperbound = 79;
-                offset = 34;
+                offset = 4;
                 break;
         }
 
@@ -569,6 +575,9 @@ public class Game implements Runnable {
         }
         if (endPosition < homefieldPos + 1) { //You've exited goalcircles.
             endPosition--;
+        }
+        if(endPosition>homefieldPos){
+            endPosition=endPosition+offset;
         }
         return endPosition;
     }
