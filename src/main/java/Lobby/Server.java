@@ -102,6 +102,7 @@ public class Server implements Runnable {
                     for(String team: usersSorted){
                         if(team != null && team.matches(users[j])){
                             exists = true;
+                            break;
                         }
                     }
                     if(exists){
@@ -128,7 +129,7 @@ public class Server implements Runnable {
         System.out.println(Arrays.toString(usersSorted));
         System.out.println(Arrays.toString(teamsSorted));
 
-        Game mainGame = new Game(host, users, teams, version, game, numberOfTeams);
+        Game mainGame = new Game(host, usersSorted, teamsSorted, version, game, numberOfTeams);
         new Thread(mainGame).start();
     }
 
