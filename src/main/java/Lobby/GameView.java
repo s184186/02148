@@ -334,30 +334,31 @@ public class GameView{
     }
 
     private void confirmMove() {
-        boolean empty = true;
+        boolean emptyCard = true;
+        boolean emptyPiece = true;
         if(currentMove.matches("switchCard")){
             for(int card :selectedCard){
                 if(card != 0){
-                    empty = false;
+                    emptyCard = false;
                     break;
                 }
             }
         } else if (currentMove.matches("yourTurn")){
             for(int card :selectedCard){
                 if(card != 0){
-                    empty = false;
+                    emptyCard = false;
                     break;
                 }
             }
             for(Piece piece: selectedPiece){
                 if(piece != null){
-                    empty = false;
+                    emptyPiece = false;
                     break;
                 }
             }
         }
 
-        if(empty){
+        if(emptyCard || emptyPiece){
             return;
         }
 

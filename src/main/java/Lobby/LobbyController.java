@@ -49,6 +49,7 @@ public class LobbyController {
     private int numberOfTeams;
     private Thread serverThread;
     private Server server;
+    private boolean gameStarted;
 
     public void initialize() {
         sp.setContent(chatBox);
@@ -73,7 +74,7 @@ public class LobbyController {
         }
 
         //Make sure lobby closes properly when user closes window
-//        lobbyStage.setOnHiding(event -> shutdown());
+        lobbyStage.setOnHiding(event -> shutDown());
 
         String ip = lobbyModel.getIp();
         String URI = "tcp://" + ip + "/game?keep";
@@ -146,6 +147,16 @@ public class LobbyController {
         return true;
     }
 
+    private void shutDown() {
+        if (isHost) {
+            try {
+                game.put("lobbyRequest","lobbyDisband", username, 0, "");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void startGame(){
         lobbyStage.close();
 
@@ -201,23 +212,17 @@ public class LobbyController {
         stage.show();
     }
 
-    public void shutdown(){
-        lobbyUpdater.stop();
-        lobbyUpdaterThread.interrupt();
-
-        if (isHost) {
+    public void closeLobby(){
+        if(!gameStarted){
             try {
-                game.put("lobbyRequest","lobbyDisband", username, 0, "");
-            } catch (InterruptedException e) {
+                game.close();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
-        try {
-            game.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        lobbyUpdater.stop();
+        lobbyUpdaterThread.interrupt();
+        lobbyStage.close();
     }
 
     public void handlePlay() throws InterruptedException {
@@ -361,6 +366,10 @@ public class LobbyController {
     public void setServer(Server server) {
         this.server = server;
     }
+
+    public void setGameStarted(boolean b) {
+        this.gameStarted = b;
+    }
 }
 
 class LobbyUpdater implements Runnable {
@@ -405,7 +414,8 @@ class LobbyUpdater implements Runnable {
                     case "disconnected":
                         //This user has lost connection
                         if (actor.matches(lobbyController.getUsername())) {
-                            Platform.runLater(() -> lobbyController.getCancelButton().fire());
+                            Platform.runLater(() -> {lobbyController.closeLobby();
+                                                     lobbyController.getCancelButton().fire();});
                         } else {
 
                             //Another user has lost connection
@@ -500,6 +510,8 @@ class LobbyUpdater implements Runnable {
                     case "gameStart":
                         Platform.runLater(
                                 () -> {
+                                    lobbyController.setGameStarted(true);
+                                    lobbyController.closeLobby();
                                     lobbyController.startGame();
                                 }
                         );
