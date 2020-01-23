@@ -570,18 +570,6 @@ public class Game implements Runnable {
         if (endPosition < homefieldPos + 1) { //You've exited goalcircles.
             endPosition--;
         }
-        liftPiece(position);
-        for (int i = 0; i < 4; i++) {
-            if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
-                if (readOnly)
-                    board[endPosition].getPieces()[i] = username; //update board
-            }
-            if (board[endPosition].getPieces()[i].matches(username)) {
-                continue; //If you are already on that field, find an available place for your piece on that field.
-            } else break;
-        }
-        //otherwise, someone elses pieces is on the position, back to home circle
-
         return endPosition;
     }
 

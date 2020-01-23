@@ -223,8 +223,8 @@ public class LobbyController {
         Scene scene = new Scene(root);
         stage.setResizable(false);
         stage.setTitle("Partners");
-        stage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         stage.setScene(scene);
+        stage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         stage.show();
     }
 
