@@ -456,12 +456,7 @@ public class GameView{
                 break;
             }
         }
-        for(int i = 0; i < 4; i++) {
-            if(hand.get(i).equals(getSelectedCard())){
-                hand.remove(i);
-                break;
-            }
-        }
+        hand.remove(getSelectedCard());
     }
 
     public ArrayList<Integer> getSelectedFields() {
@@ -477,7 +472,7 @@ public class GameView{
     }
 
     public Cards getSelectedCard() {
-        for(int i = 0; i < 4; i++){
+        for(int i = 0; i < hand.size(); i++){
             if(selectedCard[i]>0){
                 return hand.get(i);
             }
@@ -529,8 +524,13 @@ public class GameView{
     public void setCardLabels(){
         Platform.runLater(
                 () -> {
-                    for(int i = 0; i < hand.size(); i++){
-                        cardNameLabels[i].setText(hand.get(i).getName());
+                    for(int i = 0; i < 4; i++){
+                        if(hand.size() <= i){
+                            cardNameLabels[i].setText("");
+                        } else{
+                            cardNameLabels[i].setText(hand.get(i).getName());
+                        }
+
                     }
                 }
         );
