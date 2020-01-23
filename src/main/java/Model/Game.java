@@ -320,6 +320,9 @@ public class Game implements Runnable {
                 break;
 
             case SWITCH: //switch pieces
+                if(positions[pieces.get(0)]==positions[pieces.get(1)]){
+                    return "illegal move!";
+                }
                 if (board[positions[pieces.get(1)]].getPieces()[0] == null || board[positions[pieces.get(0)]].getPieces()[0] == null) { //can't switch if there isn't a piece in min. one of the fields
                     return "illegal move!";
                 }
@@ -392,7 +395,7 @@ public class Game implements Runnable {
                     if (homefieldPos == 15 * noOfPlayers) homefieldPos = 0;
                     if (board[homefieldPos].getHomeField().matches(username)) { // if it's your homefield.
                         if (readOnly) return "ok";
-                        goalSquaresUpper(homefieldPos, position, endPosition, username);
+                        endPosition=goalSquaresUpper(homefieldPos, position, endPosition, username);
                         finished[playerTurnIndex] = endPosition % 4 == 0 && isPlayerDone(username);
                         if (isTeamDone(username)) {
                             winningTeam = getTeamNumberByUsername(username);
@@ -404,13 +407,13 @@ public class Game implements Runnable {
                         return "illegal move!"; //You can't play that card because something is blocking you.
                     } else {
                         endPosition++; //Nothing is blocking you, so you can cross this homefield.
+                        if (endPosition > noOfPlayers * 15 - 1) { //If this wasn't your homefield, we'll wrap around and begin at 0.
+                            endPosition = endPosition % (noOfPlayers * 15);
+                        }
                     }
                 }
                 //The move is legal, first we remove your piece from it's current position
                 if (!readOnly) liftPiece(position);
-                if (endPosition > noOfPlayers * 15 - 1) { //If this wasn't your homefield, we'll wrap around and begin at 0.
-                    endPosition = endPosition % (noOfPlayers * 15);
-                }
                 //Now we place your piece on its end position. There is no one already on this field, so you move to the field.
                 //If you aren't passing your own homefield.
                 for (int i = 0; i < 4; i++) {
@@ -527,7 +530,7 @@ public class Game implements Runnable {
     }
 
 
-    private void goalSquaresUpper(int homefieldPos, int position, int endPosition, String username) { //WRONG. needs to find correct upper bound, not necessarily last goal circle.
+    private int goalSquaresUpper(int homefieldPos, int position, int endPosition, String username) { //WRONG. needs to find correct upper bound, not necessarily last goal circle.
         int upperbound = 0;
         switch (homefieldPos) {
             case 0:
@@ -570,8 +573,18 @@ public class Game implements Runnable {
             endPosition--;
         }
         liftPiece(position);
-        board[endPosition].getPieces()[endPosition] = username; //update board. WRONG
-        tryLock(endPosition); //attempt to lock the piece.
+        for (int i = 0; i < 4; i++) {
+            if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
+                if (readOnly)
+                board[endPosition].getPieces()[i] = username; //update board
+            }
+            if (board[endPosition].getPieces()[i].matches(username)) {
+                continue; //If you are already on that field, find an available place for your piece on that field.
+            } else break;
+        }
+        //otherwise, someone elses pieces is on the position, back to home circle
+
+        return endPosition;
     }
 
     private boolean isStuck(int position, int homefieldPos) {
