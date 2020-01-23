@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import org.jspace.SequentialSpace;
 import java.io.IOException;
@@ -90,6 +91,7 @@ public class SetupGameController {
 
         lobbyStage.setScene(lobbyScene);
         lobbyStage.setResizable(false);
+        lobbyStage.getIcons().add(new Image(getClass().getResource("/icon.png").toExternalForm()));
         lobbyStage.show();
 
     }
