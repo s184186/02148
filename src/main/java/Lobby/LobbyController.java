@@ -160,15 +160,15 @@ public class LobbyController {
             if (!gameStarted) {
                 try {
                     game.close();
+                    MainMenuView mainMenuView = new MainMenuView();
+                    try{
+                        mainMenuView.start(new Stage());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-            MainMenuView mainMenuView = new MainMenuView();
-            try{
-                mainMenuView.start(new Stage());
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
