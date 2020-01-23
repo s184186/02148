@@ -164,6 +164,12 @@ public class LobbyController {
                     e.printStackTrace();
                 }
             }
+            MainMenuView mainMenuView = new MainMenuView();
+            try{
+                mainMenuView.start(new Stage());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

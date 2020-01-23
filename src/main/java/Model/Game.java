@@ -791,6 +791,7 @@ public class Game implements Runnable {
 
     private void movePiece(ArrayList<Integer> pieces, ArrayList<Integer> pieceMovesToField) { //This updates the positions and pieceindexes array which is used for gameupdates
         if (pieces.size() == 2 && pieceMovesToField.size() == 0) { //in case of switch cards
+            pieceIndexes = new Integer[2];
             for (int i = 0; i < positions.length; i++) {
                 if (startPos[0] == positions[i]) {
                     positions[i] = startPos[1];
@@ -802,6 +803,7 @@ public class Game implements Runnable {
                 }
             }
         } else if (pieceMovesToField.size() > 0) { //in case of a seven.
+            pieceIndexes = new Integer[4];
             for (int j = 0; j < pieceMovesToField.size(); j++) {
                 if (pieceMovesToField.get(j) > 0) {
                     positions[pieces.get(j)] = pieceMovesToField.get(j);
