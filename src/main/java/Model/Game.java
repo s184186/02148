@@ -25,9 +25,7 @@ public class Game implements Runnable {
     private boolean[] finished;
     private Space game;
     private BoardField[] board;
-
     private int playerTurnIndex;
-
     private int decksize = 13;
     private int[] startPos = new int[4];
     private int[] teams;
@@ -470,6 +468,7 @@ public class Game implements Runnable {
                     ArrayList<Integer> test = new ArrayList<Integer>();
                     test.add(j);
                     test.add(i);
+
                     if (calculateMove(username, hand.get(switchIndex), test, null, 1).matches("ok")) {
                         readOnly=false;
                         return true;
@@ -483,7 +482,9 @@ public class Game implements Runnable {
                 for (int j = 1; j < 8; j++) { //each card under 8
                     ArrayList<Integer> test = new ArrayList<Integer>();
                     test.add(pieces[i]);
-                    if (calculateMove(username, Cards.getEnumByNoOfMoves(j), test, null, 1).matches("ok")) {
+                    ArrayList<Integer> pieceMoves = new ArrayList<Integer>();
+                    pieceMoves.add(7);
+                    if (calculateMove(username, Cards.getEnumByNoOfMoves(j), test, pieceMoves, 1).matches("ok")) {
                         maxMovesArr[i] = j;
                     }
                 }
