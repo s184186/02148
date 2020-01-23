@@ -154,6 +154,16 @@ public class LobbyController {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            lobbyUpdater.stop();
+            lobbyUpdaterThread.interrupt();
+            lobbyStage.close();
+            if (!gameStarted) {
+                try {
+                    game.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -213,16 +223,18 @@ public class LobbyController {
     }
 
     public void closeLobby(){
-        if(!gameStarted){
-            try {
-                game.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+        if(!isHost) {
+            lobbyUpdater.stop();
+            lobbyUpdaterThread.interrupt();
+            lobbyStage.close();
+            if (!gameStarted) {
+                try {
+                    game.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
-        lobbyUpdater.stop();
-        lobbyUpdaterThread.interrupt();
-        lobbyStage.close();
     }
 
     public void handlePlay() throws InterruptedException {

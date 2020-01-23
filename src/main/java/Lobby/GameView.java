@@ -160,7 +160,6 @@ public class GameView{
         }
     }
 
-
     public void closeGame() {
         if(!username.matches(host)){
             stage.close();
@@ -334,25 +333,25 @@ public class GameView{
     }
 
     private void confirmMove() {
-        boolean emptyCard = true;
-        boolean emptyPiece = true;
+        boolean emptyCard = false;
+        boolean emptyPiece = false;
         if(currentMove.matches("switchCard")){
             for(int card :selectedCard){
                 if(card != 0){
-                    emptyCard = false;
+                    emptyCard = true;
                     break;
                 }
             }
         } else if (currentMove.matches("yourTurn")){
             for(int card :selectedCard){
                 if(card != 0){
-                    emptyCard = false;
+                    emptyCard = true;
                     break;
                 }
             }
             for(Piece piece: selectedPiece){
                 if(piece != null){
-                    emptyPiece = false;
+                    emptyPiece = true;
                     break;
                 }
             }
