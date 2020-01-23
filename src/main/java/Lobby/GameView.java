@@ -529,7 +529,7 @@ public class GameView{
     public void setCardLabels(){
         Platform.runLater(
                 () -> {
-                    for(int i = 0; i < 4; i++){
+                    for(int i = 0; i < hand.size(); i++){
                         cardNameLabels[i].setText(hand.get(i).getName());
                     }
                 }
