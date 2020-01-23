@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import org.jspace.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -15,6 +16,7 @@ public class Server implements Runnable {
     private Space gameSpace;
     private int numberOfTeams, version, maxNumberOfPlayers = 4;
     private String host;
+    private Gson gson = new Gson();
 
     Server(int numberOfTeams, int version, String host, Space gameSpace) {
         this.numberOfTeams = numberOfTeams;
@@ -79,17 +81,58 @@ public class Server implements Runnable {
     }
 
     private void launchGameServer(Space server, Space game) throws InterruptedException {
-        System.out.println("Server: Game serverSpace has been launched");
-        Object[][] regUsers = server.queryAll(connectedUser).toArray(new Object[0][]);
-        String[] users = new String[regUsers.length];
-        int[] teams = new int[regUsers.length];
-        for (int i = 0; i < regUsers.length; i++) {
-            users[i] = (String) regUsers[i][1];
-            teams[i] = (Integer) regUsers[i][2];
+
+        Object[][] usersConnected = server.queryAll(connectedUser).toArray(new Object[0][]);
+        String[] users = new String[usersConnected.length];
+        int[] teams = new int[usersConnected.length];
+
+        for (int i = 0; i < usersConnected.length; i++) {
+            users[i] = (String) usersConnected[i][1];
+            teams[i] = (Integer) usersConnected[i][2];
         }
+
+        String[] usersSorted = new String[usersConnected.length];
+        int[] teamsSorted = new int[usersConnected.length];
+
+        int teamIndex = teams[0] - 1;
+        for (int i = 0; i < usersConnected.length; i++) {
+            for(int j = 0; j < usersConnected.length; j++){
+                if(teams[j] == teamIndex+1){
+                    boolean exists = false;
+                    for(String team: usersSorted){
+                        if(team != null && team.matches(users[j])){
+                            exists = true;
+                        }
+                    }
+                    if(exists){
+                        continue;
+                    }
+                    usersSorted[i] = users[j];
+                    teamsSorted[i] = teams[j];
+                    teamIndex = (teamIndex+1)%numberOfTeams;
+                    break;
+                }
+            }
+        }
+
+        String usersJson = gson.toJson(users);
+        String teamsJson = gson.toJson(teams);
+
+        for (Object[] user : usersConnected) {
+            String[] userInfo = {usersJson, teamsJson, String.valueOf(getVersion()), String.valueOf(getNumberOfTeams()), getHost()};
+            String userInfoJson = gson.toJson(userInfo);
+            gameSpace.put("lobbyInfo", user[1], userInfoJson);
+            gameSpace.put("lobbyUpdate", "gameStart", "", user[1], 0, "");
+        }
+
+        System.out.println(Arrays.toString(usersSorted));
+        System.out.println(Arrays.toString(teamsSorted));
+
         Game mainGame = new Game(host, users, teams, version, game, numberOfTeams);
         new Thread(mainGame).start();
     }
+
+
 
     private Thread startThread(Runnable object) {
         Thread objectThread = new Thread(object);
@@ -259,23 +302,6 @@ class LobbyRequestReceiver implements Runnable {
 //                            break;
 //                        }
                         gameSpace.put("lobbyUpdate", "startGameAck", "", server.getHost(), "ok");
-
-                        usersConnected = serverSpace.queryAll(connectedUser).toArray(new Object[0][]);
-                        String[] users = new String[usersConnected.length];
-                        int[] teams = new int[usersConnected.length];
-                        for (int i = 0; i < usersConnected.length; i++) {
-                            users[i] = (String) usersConnected[i][1];
-                            teams[i] = (Integer) usersConnected[i][2];
-                            gameSpace.put("lobbyUpdate", "connected", username, usersConnected[i][1], 0, "");
-                        }
-                        String usersJson = gson.toJson(users);
-                        String teamsJson = gson.toJson(teams);
-                        for (Object[] user : usersConnected) {
-                            String[] userInfo = {usersJson, teamsJson, String.valueOf(server.getVersion()), String.valueOf(server.getNumberOfTeams()), server.getHost()};
-                            String userInfoJson = gson.toJson(userInfo);
-                            gameSpace.put("lobbyInfo", user[1], userInfoJson);
-                            gameSpace.put("lobbyUpdate", "gameStart", "", user[1], 0, "");
-                        }
                         serverSpace.put("gameUpdate","startGame");
                         exit = true;
                         break;

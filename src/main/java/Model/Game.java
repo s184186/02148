@@ -459,7 +459,8 @@ public class Game implements Runnable {
             for (int j = 0; j < 4; j++) { // through each piece
                 ArrayList<Integer> test = new ArrayList<Integer>();
                 test.add(pieces[j]);
-                if (calculateMove(username, hand.get(i), test, null, 1).matches("ok") || calculateMove(username, hand.get(i), test, null, 0).matches("ok")  ) {
+                if (!hand.get(i).getName().matches("Switch") && !hand.get(i).getName().matches("Seven") && (calculateMove(username, hand.get(i), test, null, 1).matches("ok")
+                                                    || calculateMove(username, hand.get(i), test, null, 0).matches("ok"))) {
                     readOnly=false;
                     return true;
                 }
