@@ -20,6 +20,7 @@ import javafx.util.Duration;
 import java.awt.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static java.lang.Math.round;
 
@@ -170,6 +171,9 @@ public class GameView{
             fields[i].setStart(x1, y1, x2, y2, i, version);
             fields[(i+numberOfFields-1)%numberOfFields].setEnd(x1, y1, x2, y2);
         }
+
+        System.out.println(Arrays.toString(users));
+        System.out.println(Arrays.toString(teams));
 
         for(int i = 0; i < numberOfFields; i++) {
             double v = Math.cos(Math.toRadians((i + 0.5 + startFieldOffset) * 360 / numberOfFields));
