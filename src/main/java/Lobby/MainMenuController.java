@@ -67,7 +67,7 @@ public class MainMenuController {
     public void handleExit() {
         mainMenuView.getMainMenuStage().close();
         //Need to exit since there is a possibility of dangling threads
-        //System.exit(-1);
+        System.exit(-1);
     }
 
     void setMainMenuView(MainMenuView mainMenuView) {

@@ -288,9 +288,7 @@ public class GameView{
             y = p.y;
         }
 
-        if(piece.getCurrentField() != null){
-            piece.getCurrentField().removeFromSpot(piece);
-        }
+        if(piece.getCurrentField() != null) piece.getCurrentField().removeFromSpot(piece);
 
         piece.setCurrentField(field);
 
