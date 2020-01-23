@@ -34,7 +34,6 @@ public class Game implements Runnable {
     private int winningTeam = -1;
     private boolean justStarted;
     private int numberOfTeams;
-    private String cardType;
     private ArrayList<Cards>[] playerHands;
     private Integer[] pieceIndexes;
     private Gson gson = new Gson();
@@ -102,10 +101,9 @@ public class Game implements Runnable {
                     cantMakeMoveCounter++;
                     continue;
                 }
-
+                cantMakeMoveCounter=0;
                 game.put("gameUpdate", "yourTurn", "", users[playerTurnIndex], "", "", "");
                 result = "";
-                cardType = "";
                 ArrayList<Integer> pieces = null;
                 ArrayList<Integer> pieceMovesToField = null;
                 Cards card = null;
@@ -123,7 +121,9 @@ public class Game implements Runnable {
                     pieces = gson.fromJson((String) potentialMove[4], listType); // de brikker der bliver flyttet på (deres indekser
                     pieceMovesToField = gson.fromJson((String) potentialMove[5], listType); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
                     int chosenCard = (int) potentialMove[6];
-
+                    System.out.println("pieces.get(0): "+ pieces.get(0));
+                    System.out.println("position " + positions[pieces.get(0)]);
+                    System.out.println("card.getmoves: " + card.getMoves());
                     position = positions[pieces.get(0)];
                     endPosition = position + card.getMoves();
 
@@ -289,11 +289,11 @@ public class Game implements Runnable {
                     return "illegal move!";
                 }
 
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < pieces.size(); i++) {
                     ArrayList<Integer> a = new ArrayList<>();
                     a.add(positions[pieces.get(i)]);
                     ArrayList<Integer> b = new ArrayList<>();
-                    a.add(pieceMoves.get(i));
+                    b.add(pieceMoves.get(i));
                     calculateMove(username, card, a, b, chosenCard);
                 }
 
@@ -323,12 +323,12 @@ public class Game implements Runnable {
                 break;
 
             case SWITCH: //switch pieces
-                if (board[positions[pieces.get(1)]].getPieces()[0] == null || board[positions[pieces.get(0)]].getPieces()[0] == null) {
+                if (board[positions[pieces.get(1)]].getPieces()[0] == null || board[positions[pieces.get(0)]].getPieces()[0] == null) { //can't switch if there isn't a piece in min. one of the fields
                     return "illegal move!";
                 }
                 if(board[positions[pieces.get(0)]].isLocked() || board[positions[pieces.get(1)]].isLocked() || board[positions[pieces.get(1)]].isProtect() || board[positions[pieces.get(0)]].isProtect()){
                     return "illegal move!";
-                }
+                } //can't switch if piece is on a locked or protected field.
                 if(readOnly) return "ok";
                 String tmp1 = board[positions[pieces.get(0)]].getPieces()[0];
                 String tmp2 = board[positions[pieces.get(1)]].getPieces()[0];
@@ -483,9 +483,8 @@ public class Game implements Runnable {
                     ArrayList<Integer> test = new ArrayList<Integer>();
                     test.add(j);
                     test.add(i);
-
                     if (calculateMove(username, hand.get(switchIndex), test, null, 1).matches("ok")) {
-                        System.out.println("switch is possible!");
+                        System.out.println("switch is possible with pieces [" + j + "," + i + "]");
                         readOnly=false;
                         return true;
                     }
