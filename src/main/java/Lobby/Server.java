@@ -98,7 +98,7 @@ public class Server implements Runnable {
         String[] usersSorted = new String[usersConnected.length];
         int[] teamsSorted = new int[usersConnected.length];
 
-        int teamIndex = 1;
+        int teamIndex = 0;
         for (int i = 0; i < usersConnected.length; i++) {
             for(int j = 0; j < usersConnected.length; j++){
                 if(teams[j] == teamIndex+1){
