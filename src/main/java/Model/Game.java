@@ -34,7 +34,6 @@ public class Game implements Runnable {
     private int winningTeam = -1;
     private boolean justStarted;
     private int numberOfTeams;
-    private int needCardsCounter;
     private String cardType;
     private ArrayList<Cards>[] playerHands;
     private Integer[] pieceIndexes;
@@ -88,18 +87,22 @@ public class Game implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        int cantMakeMoveCounter=0;
         Thread thread = new Thread(new GameEndedUpdater(game, host, users));
         thread.setDaemon(true);
         thread.start();
         while (winningTeam == -1 && !exit) {
             try {
+                if(cantMakeMoveCounter==4){
+                    shuffleCards(users);
+                    cantMakeMoveCounter=0;
+                }
                 if(!canUserMakeMove(users[playerTurnIndex])) {
                     playerTurnIndex = (playerTurnIndex + 1) % users.length;
-                    continue;}
-                if (game.getp(new ActualField("need cards")) != null)
-                    needCardsCounter++; //counter that increments when a user needs cards.
-                if (needCardsCounter == noOfPlayers)
-                    shuffleCards(users); //If no one has any cards left, hand out some new ones.
+                    cantMakeMoveCounter++;
+                    continue;
+                }
+
                 game.put("gameUpdate", "yourTurn", "", users[playerTurnIndex], "", "", "");
                 result = "";
                 cardType = "";
@@ -223,7 +226,7 @@ public class Game implements Runnable {
             case FOUR: //move backwards
                 if(position>59) return "illegal move!"; // you can't move something in the homecircles with a number card
 
-                if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
+                if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
                 }//If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
@@ -467,6 +470,8 @@ public class Game implements Runnable {
                 test.add(pieces[j]);
                 if (!hand.get(i).getName().matches("Switch") && !hand.get(i).getName().matches("Seven") && (calculateMove(username, hand.get(i), test, null, 1).matches("ok")
                                                     || calculateMove(username, hand.get(i), test, null, 2).matches("ok"))) {
+                    System.out.println("normal move is possible: ");
+                    System.out.println("using card: " + hand.get(i).getName() + " at position: " + positions[pieces[j]]);
                     readOnly=false;
                     return true;
                 }
@@ -480,6 +485,7 @@ public class Game implements Runnable {
                     test.add(i);
 
                     if (calculateMove(username, hand.get(switchIndex), test, null, 1).matches("ok")) {
+                        System.out.println("switch is possible!");
                         readOnly=false;
                         return true;
                     }
@@ -506,6 +512,7 @@ public class Game implements Runnable {
             }
             if (sum > 6){
                 readOnly=false;
+                System.out.println("split is possible! ");
                 return true;
             }
         }
