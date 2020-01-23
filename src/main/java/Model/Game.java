@@ -462,6 +462,10 @@ public class Game implements Runnable {
         int counter = 0;
         int[] maxMovesArr = new int[4];
         for (int k = 0; k < noOfPlayers * 4; k++) {
+            System.out.println("board[positions[k]].getPieces()[0]: "+ board[positions[k]].getPieces()[0]);
+            System.out.println("board[positions[k]].getPieces()[1]: "+ board[positions[k]].getPieces()[1]);
+            System.out.println("board[positions[k]].getPieces()[2]: "+ board[positions[k]].getPieces()[2]);
+            System.out.println("board[positions[k]].getPieces()[3]: "+ board[positions[k]].getPieces()[2]);
             if (board[positions[k]].getPieces()[0].matches(username)) {
                 piecesPositions[counter] = positions[k];
                 pieces[counter] = k;
