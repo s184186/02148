@@ -50,6 +50,7 @@ public class LobbyController {
     private Thread serverThread;
     private Server server;
     private boolean gameStarted;
+    private boolean lobbyClosed;
 
     public void initialize() {
         sp.setContent(chatBox);
@@ -148,32 +149,52 @@ public class LobbyController {
     }
 
     private void shutDown() {
-        if (isHost) {
+        if (isHost && !gameStarted && !lobbyClosed) {
             try {
-                game.put("lobbyRequest","lobbyDisband", username, 0, "");
+                game.put("lobbyRequest", "lobbyDisband", username, 0, "");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             lobbyUpdater.stop();
             lobbyUpdaterThread.interrupt();
+
+            try {
+                game.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            MainMenuView mainMenuView = new MainMenuView();
+            try{
+                mainMenuView.start(new Stage());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else if (!isHost && !lobbyClosed){
             lobbyStage.close();
-            if (!gameStarted) {
-                try {
-                    game.close();
-                    MainMenuView mainMenuView = new MainMenuView();
-                    try{
-                        mainMenuView.start(new Stage());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            lobbyClosed = true;
+
+            lobbyUpdater.stop();
+            lobbyUpdaterThread.interrupt();
+
+            try {
+                game.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            MainMenuView mainMenuView = new MainMenuView();
+            try{
+                mainMenuView.start(new Stage());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
 
     public void startGame(){
+        lobbyClosed = true;
         lobbyStage.close();
 
         Object[] lobbyInfoJson = new Object[0];
@@ -229,16 +250,13 @@ public class LobbyController {
     }
 
     public void closeLobby(){
-        if(!isHost) {
-            lobbyUpdater.stop();
-            lobbyUpdaterThread.interrupt();
-            lobbyStage.close();
-            if (!gameStarted) {
-                try {
-                    game.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        lobbyUpdater.stop();
+        lobbyUpdaterThread.interrupt();
+        if (!gameStarted) {
+            try {
+                game.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -255,13 +273,6 @@ public class LobbyController {
 
     public void handleCancel() {
         lobbyStage.close();
-
-        MainMenuView mainMenuView = new MainMenuView();
-        try{
-            mainMenuView.start(new Stage());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void handleJoinTeam1() {
