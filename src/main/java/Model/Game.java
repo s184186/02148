@@ -70,76 +70,73 @@ public class Game implements Runnable {
             //Users will be represented as string list and handed down from server.
             setupBoard();
             shuffleCards(users);
-            for (int i = 0; i < noOfPlayers; i++) {
-                game.put("gameUpdate", "switchCard", "", users[i], "", "", "");
-            }
-            //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
-            Object[][] switchInfos = new Object[noOfPlayers][];
-            for (int i = 0; i < noOfPlayers; i++) {
-                switchInfos[i] = game.get(new ActualField("gameRequest"), new ActualField("switchCard"),
-                        new ActualField(users[i]), new FormalField(String.class), new FormalField(String.class)); //switch req consits of from, to and card fields
-            }
-            for (Object[] switchInfo : switchInfos) {
-                switchCards(switchInfo);
-            }
-            // Move will be represented by position, the card used and username.
-        } catch (InterruptedException e) {
+            Thread thread = new Thread(new GameEndedUpdater(game, host, users));
+            thread.setDaemon(true);
+            thread.start();
+            while (winningTeam == -1 && !exit) {
+                for (int i = 0; i < noOfPlayers; i++) {
+                    game.put("gameUpdate", "switchCard", "", users[i], "", "", "");
+                }
+                //initiate users to switch card. We need to make sure that same user, doesn't try to switch cards more than once.
+                Object[][] switchInfos = new Object[noOfPlayers][];
+                for (int i = 0; i < noOfPlayers; i++) {
+                    switchInfos[i] = game.get(new ActualField("gameRequest"), new ActualField("switchCard"),
+                            new ActualField(users[i]), new FormalField(String.class), new FormalField(String.class)); //switch req consits of from, to and card fields
+                }
+                for (Object[] switchInfo : switchInfos) {
+                    switchCards(switchInfo);
+                }
+                // Move will be represented by position, the card used and username.
+                int cantMakeMoveCounter = 0;
+                while (true) {
+                        if (cantMakeMoveCounter == 4) {
+                            shuffleCards(users);
+                            break;
+                        }
+                        if (!canUserMakeMove(users[playerTurnIndex])) {
+                            playerTurnIndex = (playerTurnIndex + 1) % users.length;
+                            cantMakeMoveCounter++;
+                            continue;
+                        }
+                        cantMakeMoveCounter = 0;
+                        game.put("gameUpdate", "yourTurn", "", users[playerTurnIndex], "", "", "");
+                        result = "";
+                        ArrayList<Integer> pieces = null;
+                        ArrayList<Integer> pieceMovesToField = null;
+                        Cards card = null;
+                        while (!result.matches("ok")) {
+                            System.out.println("here1");
+                            Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
+                                    new ActualField(users[playerTurnIndex]), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class)
+                                    , new FormalField(Integer.class)); // A basic move will b e represented by position, the card used and username and extra field.
+
+                            Type listType = new TypeToken<ArrayList<Integer>>() {
+                            }.getType();
+
+                            String username = (String) potentialMove[2];
+                            card = gson.fromJson((String) potentialMove[3], Cards.class);
+                            pieces = gson.fromJson((String) potentialMove[4], listType); // de brikker der bliver flyttet på (deres indekser
+                            pieceMovesToField = gson.fromJson((String) potentialMove[5], listType); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
+                            int chosenCard = (int) potentialMove[6];
+                            System.out.println("pieces.get(0): " + pieces.get(0));
+                            System.out.println("position " + positions[pieces.get(0)]);
+                            System.out.println("card.getmoves: " + card.getMoves());
+                            position = positions[pieces.get(0)];
+                            endPosition = position + card.getMoves();
+
+                            result = calculateMove(username, card, pieces, pieceMovesToField, chosenCard);
+                            game.put("gameUpdate", "turnRequestAck", result, users[playerTurnIndex],
+                                    "", "", "");
+
+                        }
+                        playerHands[getIndexByUsername(users[playerTurnIndex])].remove(card);
+                        movePiece(pieces, pieceMovesToField);
+                        update(users[playerTurnIndex]);
+                        playerTurnIndex = (playerTurnIndex + 1) % users.length;
+                    }
+                }
+        } catch(InterruptedException e){
             e.printStackTrace();
-        }
-        int cantMakeMoveCounter = 0;
-        Thread thread = new Thread(new GameEndedUpdater(game, host, users));
-        thread.setDaemon(true);
-        thread.start();
-        while (winningTeam == -1 && !exit) {
-            try {
-                if (cantMakeMoveCounter == 4) {
-                    shuffleCards(users);
-                    cantMakeMoveCounter = 0;
-                }
-                if (!canUserMakeMove(users[playerTurnIndex])) {
-                    playerTurnIndex = (playerTurnIndex + 1) % users.length;
-                    cantMakeMoveCounter++;
-                    continue;
-                }
-                cantMakeMoveCounter = 0;
-                game.put("gameUpdate", "yourTurn", "", users[playerTurnIndex], "", "", "");
-                result = "";
-                ArrayList<Integer> pieces = null;
-                ArrayList<Integer> pieceMovesToField = null;
-                Cards card = null;
-                while (!result.matches("ok")) {
-                    System.out.println("here1");
-                    Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
-                            new ActualField(users[playerTurnIndex]), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class)
-                            , new FormalField(Integer.class)); // A basic move will b e represented by position, the card used and username and extra field.
-
-                    Type listType = new TypeToken<ArrayList<Integer>>() {
-                    }.getType();
-
-                    String username = (String) potentialMove[2];
-                    card = gson.fromJson((String) potentialMove[3], Cards.class);
-                    pieces = gson.fromJson((String) potentialMove[4], listType); // de brikker der bliver flyttet på (deres indekser
-                    pieceMovesToField = gson.fromJson((String) potentialMove[5], listType); //hvor langt brikker er flyttet frem. bliver kun brugt på syv'er
-                    int chosenCard = (int) potentialMove[6];
-                    System.out.println("pieces.get(0): " + pieces.get(0));
-                    System.out.println("position " + positions[pieces.get(0)]);
-                    System.out.println("card.getmoves: " + card.getMoves());
-                    position = positions[pieces.get(0)];
-                    endPosition = position + card.getMoves();
-
-                    result = calculateMove(username, card, pieces, pieceMovesToField, chosenCard);
-                    game.put("gameUpdate", "turnRequestAck", result, users[playerTurnIndex],
-                            "", "", "");
-
-                }
-                playerHands[getIndexByUsername(users[playerTurnIndex])].remove(card);
-                movePiece(pieces, pieceMovesToField);
-                update(users[playerTurnIndex]);
-                playerTurnIndex = (playerTurnIndex + 1) % users.length;
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
         System.out.println("Team " + winningTeam + " won");
     }
