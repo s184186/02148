@@ -91,7 +91,7 @@ public class Game implements Runnable {
         }
         while (winningTeam == -1) {
             try {
-                if(!canUserMakeMove(playerTurn)) nextTurn();
+                if(!canUserMakeMove(playerTurn)) {nextTurn(); continue;}
                 if (game.getp(new ActualField("need cards")) != null)
                     needCardsCounter++; //counter that increments when a user needs cards.
                 if (needCardsCounter == noOfPlayers)
@@ -450,12 +450,12 @@ public class Game implements Runnable {
                 counter++;
             }
         }
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < hand.size(); i++) {
             if (hand.get(i).getName().matches("Switch")) switchIndex = i;
             if (hand.get(i).getName().matches("Seven")) splitIndex = i;
         }
 
-        for (int i = 0; i < 4; i++) { // go through each card
+        for (int i = 0; i < hand.size(); i++) { // go through each card
             for (int j = 0; j < 4; j++) { // through each piece
                 ArrayList<Integer> test = new ArrayList<Integer>();
                 test.add(pieces[j]);
@@ -499,7 +499,7 @@ public class Game implements Runnable {
                 return true;
             }
         }
-        System.out.println("SKIP!");
+        System.out.println("SKIP! User: " + username + " couldn't make a move");
         return false;
     }
 
