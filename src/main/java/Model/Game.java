@@ -220,22 +220,27 @@ public class Game implements Runnable {
 
         switch (card) {
             case FOUR: //move backwards
-                if (position > 59)
+                if (position > 59){
+                    System.out.println("-4 print1");
                     return "illegal move!"; // you can't move something in the homecircles with a number card
-
+                     }
                 if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
+                    System.out.println("-4 print2");
                     return "illegal move!";
                 }//If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
+                    System.out.println("-4 print3");
                     return "illegal move!"; //If you've finished and you're trying to move an opponents piece.
                 }
                 if (board[position].isLocked() || position > 59 && position < noOfPlayers * 15 + noOfPlayers * 4) {
+                    System.out.println("-4 print4");
                     return "illegal move!"; //if piece is locked or in goal circle it can't be moved with a -4 card.
                 }
                 if (position % 15 < endPosition % 15) { //if this is the case, you've crossed a homefield
                     homefieldPos = 15 * (endPosition / 15); //figure out the position of homefield crossed
                     if (homefieldPos == noOfPlayers * 15) homefieldPos = 0;
                     if (!board[homefieldPos].getHomeField().matches(username) && board[homefieldPos].getPieces()[0] != null) { // if it's not your homefield and someone is on that homefield, you can't play -4.
+                        System.out.println("-4 print5");
                         return "illegal move!";
                     } else {
                         endPosition--; //otherwise decrement by 1 since you're jumping over homefield.
