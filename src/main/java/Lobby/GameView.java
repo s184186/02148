@@ -526,7 +526,7 @@ public class GameView{
         this.userSpace = userSpace;
     }
 
-    private void setCardLabels(){
+    public void setCardLabels(){
         Platform.runLater(
                 () -> {
                     for(int i = 0; i < 4; i++){
@@ -656,6 +656,8 @@ class GameUpdater implements Runnable{
 
                             if (((String) resp[2]).matches("ok")) {
                                 gameView.removeSelectedCard();
+                                gameView.setCardLabels();
+                                Platform.runLater(() ->gameView.resetSelections());
                                 break;
                             }
                             Platform.runLater(() ->gameView.resetSelections());
