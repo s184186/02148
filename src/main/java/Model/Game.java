@@ -25,10 +25,9 @@ public class Game implements Runnable {
     private boolean[] finished;
     private Space game;
     private BoardField[] board;
-    private String playerTurn;
-    private int startingTeamsNumber;
+
     private int playerTurnIndex;
-    private int teamTurnIndex;
+
     private int decksize = 13;
     private int[] startPos = new int[4];
     private int[] teams;
@@ -60,7 +59,7 @@ public class Game implements Runnable {
         this.justStarted = true;
         this.playerHands = new ArrayList[noOfPlayers];
         for (int i = 0; i < noOfPlayers; i++) {
-            playerHands[i] = new ArrayList<Cards>();
+            playerHands[i] = new ArrayList<>();
         }
         this.positions = new int[noOfPlayers * 4];
         this.pieceIndexes = new Integer[noOfPlayers * 4];
@@ -90,14 +89,14 @@ public class Game implements Runnable {
         }
         while (winningTeam == -1) {
             try {
-                if(!canUserMakeMove(playerTurn)) {
-                    nextTurn();
+                if(!canUserMakeMove(users[playerTurnIndex])) {
+                    playerTurnIndex = (playerTurnIndex + 1) % users.length;
                     continue;}
                 if (game.getp(new ActualField("need cards")) != null)
                     needCardsCounter++; //counter that increments when a user needs cards.
                 if (needCardsCounter == noOfPlayers)
                     shuffleCards(users); //If no one has any cards left, hand out some new ones.
-                game.put("gameUpdate", "yourTurn", "", playerTurn, "", "", "");
+                game.put("gameUpdate", "yourTurn", "", users[playerTurnIndex], "", "", "");
                 result = "";
                 cardType = "";
                 ArrayList<Integer> pieces = null;
@@ -106,7 +105,7 @@ public class Game implements Runnable {
                 while (!result.matches("ok")) {
                     System.out.println("here1");
                     Object[] potentialMove = game.get(new ActualField("gameRequest"), new ActualField("turnRequest"),
-                            new ActualField(playerTurn), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class)
+                            new ActualField(users[playerTurnIndex]), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class)
                             , new FormalField(Integer.class)); // A basic move will b e represented by position, the card used and username and extra field.
 
                     Type listType = new TypeToken<ArrayList<Integer>>() {
@@ -122,14 +121,14 @@ public class Game implements Runnable {
                     endPosition = position + card.getMoves();
 
                     result = calculateMove(username, card, pieces, pieceMovesToField, chosenCard);
-                    game.put("gameUpdate", "turnRequestAck", result, playerTurn,
+                    game.put("gameUpdate", "turnRequestAck", result, users[playerTurnIndex],
                             "", "", "");
 
                 }
-                playerHands[getIndexByUsername(playerTurn)].remove(card);
+                playerHands[getIndexByUsername(users[playerTurnIndex])].remove(card);
                 movePiece(pieces, pieceMovesToField);
-                update(playerTurn);
-                nextTurn();
+                update(users[playerTurnIndex]);
+                playerTurnIndex = (playerTurnIndex + 1) % users.length;
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -180,11 +179,8 @@ public class Game implements Runnable {
             String handJson = gson.toJson(hand);
             game.put("gameUpdate", "hand", "", users[i], handJson, "", ""); //Each user's hand is put in the tuple space. The users name is the id factor.
         }
-        if (justStarted) {
-            playerTurnIndex = random.nextInt(noOfPlayers / numberOfTeams); //figuring out who has the first turn
-            teamTurnIndex = teams[playerTurnIndex];
-            startingTeamsNumber = teamTurnIndex;
-            playerTurn = (String) users[playerTurnIndex];
+        if(justStarted){
+            playerTurnIndex = random.nextInt(users.length);
             justStarted = false;
         }
     }
@@ -222,7 +218,7 @@ public class Game implements Runnable {
                 if (!finished[playerTurnIndex] && board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
                 }//If you haven't finished but you're trying to move another person's pieces, it's illegal.
-                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
                     return "illegal move!"; //If you've finished and you're trying to move an opponents piece.
                 }
                 if (board[position].isLocked() || position > 59 && position < noOfPlayers * 15 + noOfPlayers * 4) {
@@ -272,10 +268,10 @@ public class Game implements Runnable {
                 if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
                 }
-                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
                     return "illegal move!";
                 }
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < pieceMoves.size(); i++) {
                     sum += pieceMoves.get(i);
                 }
                 if (sum != 7) {
@@ -297,7 +293,7 @@ public class Game implements Runnable {
                     return "illegal move!";
 
                 }
-                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
                     return "illegal move!"; //If you've finished and you're trying to move an opponents piece.
                 }
                 homefieldPos = getHomeFieldByUsername(username);
@@ -360,10 +356,10 @@ public class Game implements Runnable {
             //switch case to default
             default: //Default corresponds to all enums with the function fw/forward
                 if(position>75) return "illegal move!"; // you can't move something in the homecircles with a number card
-                if (!finished[playerTurnIndex] && board[position].getPieces()[0] != username) {
+                if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
                     return "illegal move!"; //If you haven't finished but you're trying to move another person's pieces, it's illegal.
                 }
-                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(playerTurn))) {
+                if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
                     return "illegal move!"; //If you've finished and you're trying to move an opponents piece.
                 }
                 if (board[position].isLocked() || finished[playerTurnIndex]) {
@@ -587,15 +583,6 @@ public class Game implements Runnable {
                 break;
             }
         }
-    }
-
-    private void nextTurn() {
-        teamTurnIndex = ++teamTurnIndex % (numberOfTeams + 1); //there is no 0'th team.
-        if (teamTurnIndex == 0) teamTurnIndex = 1; //there is no 0'th team.
-        if (teamTurnIndex == startingTeamsNumber) {
-            playerTurnIndex = ++playerTurnIndex % getTeamByNumber(teamTurnIndex).size();
-        }
-        playerTurn = getTeamByNumber(teamTurnIndex).get(playerTurnIndex).getUsername();
     }
 
     private boolean isPlayerDone(String username) {

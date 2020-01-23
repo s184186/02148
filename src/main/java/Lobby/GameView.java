@@ -241,13 +241,13 @@ public class GameView{
             x = piece.getCircle().getCenterX();
             y = piece.getCircle().getCenterY();
         }else {
-                Point p = field.getNextSpot(piece);
-                if(p == null){
-                    return;
-                }
-                x = p.x;
-                y = p.y;
+            Point p = field.getNextSpot(piece);
+            if(p == null){
+                return;
             }
+            x = p.x;
+            y = p.y;
+        }
 
         if(piece.getCurrentField() != null){
             piece.getCurrentField().removeFromSpot(piece);
@@ -258,8 +258,8 @@ public class GameView{
         TranslateTransition translateTransition = new TranslateTransition();
         translateTransition.setDuration(Duration.millis(1000));
         translateTransition.setNode(piece.getStack());
-        translateTransition.setByX(x-piece.getCircle().getCenterX()-piece.getCircle().getTranslateX());
-        translateTransition.setByY(y-piece.getCircle().getCenterY()-piece.getCircle().getTranslateY());
+        translateTransition.setByX(x-piece.getCircle().getCenterX()-piece.getStack().getTranslateX());
+        translateTransition.setByY(y-piece.getCircle().getCenterY()-piece.getStack().getTranslateY());
         translateTransition.setCycleCount(1);
         translateTransition.setAutoReverse(false);
         translateTransition.play();
