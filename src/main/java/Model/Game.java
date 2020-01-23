@@ -18,7 +18,6 @@ public class Game implements Runnable {
     private int upper = -2;
     private int offset;
     private int version;
-    private boolean split;
     private String result;
     private Integer position;
     private Integer endPosition;
@@ -91,7 +90,9 @@ public class Game implements Runnable {
         }
         while (winningTeam == -1) {
             try {
-                if(!canUserMakeMove(playerTurn)) {nextTurn(); continue;}
+                if(!canUserMakeMove(playerTurn)) {
+                    nextTurn();
+                    continue;}
                 if (game.getp(new ActualField("need cards")) != null)
                     needCardsCounter++; //counter that increments when a user needs cards.
                 if (needCardsCounter == noOfPlayers)
@@ -266,7 +267,6 @@ public class Game implements Runnable {
 
             case SEVEN: //split. When user uses split, the move is of the form:position, card, username, moves
                 int sum = 0;
-                split = true;
 
                 if(position>75) return "illegal move!";
                 if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
@@ -290,8 +290,7 @@ public class Game implements Runnable {
                     calculateMove(username, card, a, b, chosenCard);
                 }
 
-                split = false;
-                return "split done!";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
+                return "ok";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
 
             case HEART: //release piece
                 if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
@@ -317,7 +316,10 @@ public class Game implements Runnable {
                 break;
 
             case SWITCH: //switch pieces
-                if (board[positions[pieces.get(1)]].getPieces()[0] == null || board[positions[pieces.get(0)]].getPieces()[0] == null || board[positions[pieces.get(0)]].isLocked() || board[positions[pieces.get(1)]].isLocked() || board[pieces.get(1)].isProtect() || board[pieces.get(0)].isProtect()) {
+                if (board[positions[pieces.get(1)]].getPieces()[0] == null || board[positions[pieces.get(0)]].getPieces()[0] == null) {
+                    return "illegal move!";
+                }
+                if(board[positions[pieces.get(0)]].isLocked() || board[positions[pieces.get(1)]].isLocked() || board[pieces.get(1)].isProtect() || board[pieces.get(0)].isProtect()){
                     return "illegal move!";
                 }
                 if(readOnly) return "ok";
@@ -460,7 +462,7 @@ public class Game implements Runnable {
                 ArrayList<Integer> test = new ArrayList<Integer>();
                 test.add(pieces[j]);
                 if (!hand.get(i).getName().matches("Switch") && !hand.get(i).getName().matches("Seven") && (calculateMove(username, hand.get(i), test, null, 1).matches("ok")
-                                                    || calculateMove(username, hand.get(i), test, null, 0).matches("ok"))) {
+                                                    || calculateMove(username, hand.get(i), test, null, 2).matches("ok"))) {
                     readOnly=false;
                     return true;
                 }
@@ -500,6 +502,7 @@ public class Game implements Runnable {
                 return true;
             }
         }
+        readOnly=false;
         System.out.println("SKIP! User: " + username + " couldn't make a move");
         return false;
     }
@@ -587,7 +590,6 @@ public class Game implements Runnable {
     }
 
     private void nextTurn() {
-        if (split) return;
         teamTurnIndex = ++teamTurnIndex % (numberOfTeams + 1); //there is no 0'th team.
         if (teamTurnIndex == 0) teamTurnIndex = 1; //there is no 0'th team.
         if (teamTurnIndex == startingTeamsNumber) {
