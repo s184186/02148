@@ -249,29 +249,28 @@ public class Game implements Runnable {
                     endPosition = endPosition % (noOfPlayers * 15);
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (board[endPosition].getPieces()[i].matches(username))
-                        continue; //If you are already on that field, find an available place for your piece on that field.
                     if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
                         if (readOnly) return "ok";
                         board[endPosition].getPieces()[i] = username; //update board
                         return "ok";
-                    } else {
-                        for (int j = 0; j < noOfPlayers; j++) {
-                            if (board[15 * (j)].getHomeField().matches(username)) {
-                                for (int k = 0; k < noOfPlayers; k++) {
-                                    if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] == null) {
-                                        if (readOnly) return "ok";
-                                        board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
-                                        return "ok";
-                                    }
-                                }
+                    }
+                    if (board[endPosition].getPieces()[i].matches(username))
+                        continue; //If you are already on that field, find an available place for your piece on that field.
+                    else break;
+                }
+                for (int j = 0; j < noOfPlayers; j++) {
+                    if (board[15 * (j)].getHomeField().matches(username)) {
+                        for (int k = 0; k < noOfPlayers; k++) {
+                            if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] == null) {
+                                if (readOnly) return "ok";
+                                board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
+                                return "ok";
                             }
                         }
                     }
-                    break;
                 }
-
                 break;
+
 
             case SEVEN: //split. When user uses split, the move is of the form:position, card, username, moves
                 int sum = 0;
@@ -427,22 +426,22 @@ public class Game implements Runnable {
                         continue; //If you are already on that field, find an available place for your piece on that field.
                     } else break;
                 }
-                        //otherwise, there was no room for you, back to home circle
-                        for (int j = 0; j < noOfPlayers; j++) {
-                            if (board[15 * (j)].getHomeField().matches(username)) {
-                                endPosition = 15 * j;
-                                for (int k = 0; k < 4; k++) {
-                                    if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
-                                        if (readOnly) return "ok";
-                                        board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
-                                        return "ok";
-                                    }
-                                }
+                //otherwise, someone elses pieces is on the position, back to home circle
+                for (int j = 0; j < noOfPlayers; j++) {
+                    if (board[15 * (j)].getHomeField().matches(username)) {
+                        endPosition = 15 * j;
+                        for (int k = 0; k < 4; k++) {
+                            if (board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] != null) {
+                                if (readOnly) return "ok";
+                                board[noOfPlayers * 15 + 4 * noOfPlayers].getPieces()[k] = username;
+                                return "ok";
                             }
                         }
+                    }
                 }
-        return "illegal move!";
         }
+        return "illegal move!";
+    }
 
     private boolean canUserMakeMove(String username) throws InterruptedException {
         readOnly = true;
