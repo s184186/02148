@@ -26,7 +26,7 @@ public class Game implements Runnable {
     private Space game;
     private BoardField[] board;
     private int playerTurnIndex;
-    private int decksize = 13;
+    private int decksize = 12;
     private int[] teams;
     private int[] positions;
     private int winningTeam = -1;
@@ -150,7 +150,7 @@ public class Game implements Runnable {
                 add(new CardObj(Cards.FOUR));
                 add(new CardObj(Cards.FIVE));
                 add(new CardObj(Cards.SIX));
-                add(new CardObj(SEVEN));
+                /*add(new CardObj(SEVEN)); this doesn't work*/
                 add(new CardObj(Cards.NINE));
                 add(new CardObj(Cards.TEN));
                 add(new CardObj(Cards.TWELVE));
