@@ -18,7 +18,6 @@ public class Game implements Runnable {
     private int upper = -2;
     private int offset;
     private int version;
-    private String result;
     private Integer position;
     private Integer endPosition;
     private String[] users;
@@ -99,7 +98,7 @@ public class Game implements Runnable {
                     }
                     cantMakeMoveCounter = 0;
                     game.put("gameUpdate", "yourTurn", "", users[playerTurnIndex], "", "", "");
-                    result = "";
+                    String result = "";
                     ArrayList<Integer> pieces = null;
                     ArrayList<Integer> pieceMovesToField = null;
                     Cards card = null;
@@ -237,17 +236,17 @@ public class Game implements Runnable {
                     return "illegal move!"; //if piece is locked or in goal circle it can't be moved with a -4 card.
                 }
                 if (position % 15 < endPosition % 15) { //if this is the case, you've crossed a homefield
-                    homefieldPos = 15 * (endPosition / 15); //figure out the position of homefield crossed
+                    homefieldPos = 15 * (position / 15); //figure out the position of homefield crossed
                     if (homefieldPos == noOfPlayers * 15) homefieldPos = 0;
                     if (!board[homefieldPos].getHomeField().matches(username) && board[homefieldPos].getPieces()[0] != null) { // if it's not your homefield and someone is on that homefield, you can't play -4.
                         System.out.println("-4 print5");
                         return "illegal move!";
-                    } else {
+                    } else if(!board[homefieldPos].getHomeField().matches(username)) {
                         endPosition--; //otherwise decrement by 1 since you're jumping over homefield.
                     }
                 }
                 if (endPosition < 0) { //If you're endposition is negative we'll wrap around and count from 59.
-                    endPosition = endPosition % (noOfPlayers * 15);
+                    endPosition = endPosition % (noOfPlayers * 15)+noOfPlayers*15;
                 }
                 for (int i = 0; i < 4; i++) {
                     if (board[endPosition].getPieces()[i] == null) { //if there is room, insert piece there
@@ -276,23 +275,26 @@ public class Game implements Runnable {
             case SEVEN: //split. When user uses split, the move is of the form:position, card, username, moves
                 int sum = 0;
 
-                if (position > 75) return "illegal move!";
+                if (position >= noOfPlayers*15+4*noOfPlayers) return "illegal move!";
                 if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
+                    System.out.println("seven print 1");
                     return "illegal move!";
                 }
                 if (finished[playerTurnIndex] && (getTeamByUsername(board[position].getPieces()[0]) != getTeamByUsername(users[playerTurnIndex]))) {
+                    System.out.println("seven print 2");
                     return "illegal move!";
                 }
                 for (int i = 0; i < pieceMoves.size(); i++) {
-                    sum += pieceMoves.get(i);
+                    sum += pieceMoves.get(i)-positions[pieces.get(i)];
                 }
                 if (sum != 7) {
+                    System.out.println("seven print 3, sum is: " + sum);
                     return "illegal move!";
                 }
 
                 for (int i = 0; i < pieces.size(); i++) {
                     ArrayList<Integer> a = new ArrayList<>();
-                    a.add(positions[pieces.get(i)]);
+                    a.add(pieces.get(i));
                     ArrayList<Integer> b = new ArrayList<>();
                     b.add(pieceMoves.get(i));
                     calculateMove(username, card, a, b, chosenCard);
@@ -301,6 +303,9 @@ public class Game implements Runnable {
                 return "ok";  // User who plays a 7 needs to make sure that he only gives up his turn when he receives a split done
 
             case HEART: //release piece
+                if(position<noOfPlayers*15+noOfPlayers*4){
+                    return "illegal move!";
+                }
                 if (!finished[playerTurnIndex] && !board[position].getPieces()[0].matches(username)) {
                     return "illegal move!";
 
@@ -368,7 +373,7 @@ public class Game implements Runnable {
 
             //switch case to default
             default: //Default corresponds to all enums with the function fw/forward
-                if (position > 75){
+                if (position >=noOfPlayers*15+noOfPlayers*4){
                     System.out.println("print1");
                     return "illegal move!"; // you can't move something in the homecircles with a number card
                     }
@@ -408,7 +413,6 @@ public class Game implements Runnable {
                         if (isTeamDone(username)) {
                             winningTeam = getTeamNumberByUsername(username);
                         }
-                        return "ok"; //remove card from space/card was valid and has been used
                     }
                     //if it's not your homefield
                     else if (board[homefieldPos].getPieces()[0] != null) {
@@ -462,20 +466,20 @@ public class Game implements Runnable {
         int counter = 0;
         int[] maxMovesArr = new int[4];
         for (int k = 0; k < noOfPlayers * 4; k++) {
+            System.out.println("postions[k]: " + positions[k]);
             System.out.println("board[positions[k]].getPieces()[0]: "+ board[positions[k]].getPieces()[0]);
-            System.out.println("board[positions[k]].getPieces()[1]: "+ board[positions[k]].getPieces()[1]);
-            System.out.println("board[positions[k]].getPieces()[2]: "+ board[positions[k]].getPieces()[2]);
-            System.out.println("board[positions[k]].getPieces()[3]: "+ board[positions[k]].getPieces()[2]);
             if (board[positions[k]].getPieces()[0].matches(username)) {
                 piecesPositions[counter] = positions[k];
                 pieces[counter] = k;
                 counter++;
             }
         }
+        System.out.println("after normal case of canusermakemove: ");
         for (int i = 0; i < hand.size(); i++) {
             if (hand.get(i).getName().matches("Switch")) switchIndex = i;
             if (hand.get(i).getName().matches("Seven")) splitIndex = i;
         }
+        System.out.println("before normal case of canusermakemove: ");
 
         for (int i = 0; i < hand.size(); i++) { // go through each card
             for (int j = 0; j < 4; j++) { // through each piece
@@ -490,6 +494,10 @@ public class Game implements Runnable {
                 }
             }
         }
+        System.out.println("after normal case of canusermakemove: ");
+
+        System.out.println("before switch case of canusermakemove: ");
+
         if (switchIndex != -1) {
             for (int i = 0; i < noOfPlayers * 4; i++) {
                 for (int j = 0; j < noOfPlayers * 4; j++) {
@@ -504,7 +512,10 @@ public class Game implements Runnable {
                 }
             }
             //try to switch with everyone and everything.
+            System.out.println("after switch case of canusermakemove: ");
+
         }
+        System.out.println("before split case of canusermakemove: ");
         if (splitIndex != -1) {
             for (int i = 0; i < 4; i++) { //each piece
                 for (int j = 1; j < 8; j++) { //each card under 8
@@ -527,6 +538,7 @@ public class Game implements Runnable {
                 System.out.println("split is possible! ");
                 return true;
             }
+            System.out.println("after split case of canusermakemove: ");
         }
         readOnly = false;
         System.out.println("SKIP! User: " + username + " couldn't make a move");
@@ -610,7 +622,7 @@ public class Game implements Runnable {
     private void liftPiece(int position) {
         for (int j = 3; j > -1; j--) {
             if (board[position].getPieces()[j] != null) {
-                board[position].getPieces()[j] = "";
+                board[position].getPieces()[j] = null;
                 break;
             }
         }
